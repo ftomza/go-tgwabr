@@ -9,6 +9,7 @@ import (
 	"strings"
 	"tgwabr/api"
 	appCtx "tgwabr/context"
+	"tgwabr/pkg"
 	"time"
 
 	"github.com/Rhymen/go-whatsapp"
@@ -54,7 +55,9 @@ func (s *Service) handleMessage(message interface{}) {
 		msg.WAClient = s.conn.Info.Wid
 	}
 
-	s.clients = append(s.clients, msg.WAClient)
+	if !pkg.StringInSlice(msg.WAClient, s.clients) {
+		s.clients = append(s.clients, msg.WAClient)
+	}
 
 	db, ok := appCtx.FromDB(s.ctx)
 	if !ok {
@@ -168,8 +171,8 @@ func (s *Service) HandleDocumentMessage(message whatsapp.DocumentMessage) {
 	s.handleMessage(message)
 }
 
-func (s *Service) HandleJsonMessage(message string) {
+func (s *Service) HandleJsonMessage(_ string) {
 }
 
-func (s *Service) HandleContactMessage(message whatsapp.ContactMessage) {
+func (s *Service) HandleContactMessage(_ whatsapp.ContactMessage) {
 }
