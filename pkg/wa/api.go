@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 	"tgwabr/api"
+	appCtx "tgwabr/context"
 	"tgwabr/pkg"
 	"time"
 
@@ -174,7 +175,7 @@ func (s *Service) SendDocument(client string, reader io.Reader, mime string, fil
 }
 
 type historyHandler struct {
-	c        *whatsapp.Conn
+	s        *Service
 	messages []string
 }
 
@@ -187,31 +188,30 @@ func (h *historyHandler) HandleError(err error) {
 }
 
 func (h *historyHandler) HandleTextMessage(message whatsapp.TextMessage) {
-	authorID := "-"
 	screenName := "-"
 	if message.Info.FromMe {
-		authorID = h.c.Info.Wid
-		screenName = ""
+		db, ok := appCtx.FromDB(h.s.ctx)
+		screenName = "Me"
+		if ok {
+			mID := message.Info.Id
+			item, err := db.GetMessageByWA(mID)
+			if err == nil && item != nil && item.TGUserName != "" {
+				screenName = "@" + item.TGUserName
+			}
+		}
 	} else {
-		if message.Info.Source.Participant != nil {
-			authorID = *message.Info.Source.Participant
-		} else {
-			authorID = message.Info.RemoteJid
-		}
-		if message.Info.Source.PushName != nil {
-			screenName = *message.Info.Source.PushName
-		}
+		screenName = "Client"
 	}
 
 	date := time.Unix(int64(message.Info.Timestamp), 0)
-	h.messages = append(h.messages, fmt.Sprintf("%s	%s (%s): %s", date,
-		authorID, screenName, message.Text))
+	h.messages = append(h.messages, fmt.Sprintf("%s %s: %s", date,
+		screenName, message.Text))
 
 }
 
 func (s *Service) GetHistory(client string, size int) (result []string, err error) {
 	client = s.PrepareClientJID(client)
-	handler := &historyHandler{c: s.conn}
+	handler := &historyHandler{s: s}
 
 	// load chat history and pass messages to the history handler to accumulate
 	err = s.conn.LoadChatMessages(client, size, "", false, false, handler)

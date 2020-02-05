@@ -98,6 +98,16 @@ func (s *Service) login(onlyRestore bool) error {
 		}
 	}
 
+	pong, err := s.conn.AdminTest()
+	if err != nil {
+		err = s.conn.Restore()
+		if err != nil {
+			session, _ = s.conn.Disconnect()
+		}
+	}
+
+	log.Println("WA Status: ", pong)
+
 	if err = s.writeSession(session); err != nil {
 		return fmt.Errorf("error saving session: %v", err)
 	}

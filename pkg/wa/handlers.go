@@ -2,6 +2,7 @@ package wa
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -141,7 +142,7 @@ func (s *Service) handleMessage(message interface{}) {
 
 func (s *Service) HandleError(err error) {
 
-	if e, ok := err.(*whatsapp.ErrConnectionFailed); ok {
+	if e, ok := err.(*whatsapp.ErrConnectionFailed); ok || errors.Is(err, whatsapp.ErrInvalidWsData) {
 		log.Printf("Connection failed, underlying error: %v", e.Err)
 		log.Println("WA Waiting 30sec...")
 		<-time.After(30 * time.Second)
