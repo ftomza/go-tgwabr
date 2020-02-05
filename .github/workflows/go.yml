@@ -1,7 +1,12 @@
 name: Go
 on: [push]
 jobs:
-
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: GolangCI-Lint Action
+        uses: actions-contrib/golangci-lint@v0.1.0
   build:
     name: Build
     runs-on: ubuntu-latest
