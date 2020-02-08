@@ -125,6 +125,8 @@ func (s *Service) HandleCommand(update tgbotapi.Update) {
 		s.CommandStatus(update)
 	case "login":
 		s.CommandLogin(update)
+	case "logout":
+		s.CommandLogout(update)
 	case "join":
 		s.CommandJoin(update)
 	case "leave":

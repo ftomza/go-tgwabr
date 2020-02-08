@@ -48,6 +48,7 @@ type Chat struct {
 type WA interface {
 	GetStatusLogin() bool
 	DoLogin() (bool, error)
+	DoLogout() (bool, error)
 	ClientExist(client string) bool
 	GetClientName(client string) string
 	SendMessage(client, text, QuotedID, Quoted string) (msg *WAMessage, err error)

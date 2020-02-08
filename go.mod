@@ -3,6 +3,7 @@ module tgwabr
 go 1.13
 
 require (
+	github.com/Arman92/go-tdlib v0.0.0-20191103185020-a66012edd023
 	github.com/Rhymen/go-whatsapp v0.1.0
 	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible

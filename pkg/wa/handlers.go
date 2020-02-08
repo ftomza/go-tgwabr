@@ -140,7 +140,6 @@ func (s *Service) handleMessage(message interface{}) {
 	if err != nil {
 		log.Println("Save store error: ", err)
 	}
-	fmt.Println(msg)
 }
 
 func (s *Service) HandleError(err error) {

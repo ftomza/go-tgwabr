@@ -128,6 +128,37 @@ func (s *Service) CommandLogin(update tgbotapi.Update) {
 	}
 }
 
+func (s *Service) CommandLogout(update tgbotapi.Update) {
+
+	msg := tgbotapi.NewMessage(s.mainGroup, "")
+	defer func() {
+		if msg.Text != "" {
+			s.BotSend(msg)
+		}
+	}()
+
+	wa, ok := context.FromWA(s.ctx)
+	if !ok {
+		msg.Text = "Module WhatsApp not ready"
+		return
+	}
+
+	if update.Message.Chat.ID != s.mainGroup {
+		msg.ChatID = update.Message.Chat.ID
+		msg.Text = "Command work only 'Main group'"
+		return
+	}
+
+	ok, err := wa.DoLogout()
+	if err != nil {
+		msg.Text = fmt.Sprintf("Error login: %s", err)
+	} else if ok {
+		msg.Text = "Logout OK"
+	} else {
+		msg.Text = "Logout FAIL"
+	}
+}
+
 func (s *Service) CommandJoin(update tgbotapi.Update) {
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")

@@ -35,6 +35,22 @@ func (s *Service) DoLogin() (ok bool, err error) {
 	return true, nil
 }
 
+func (s *Service) DoLogout() (bool, error) {
+	err := s.conn.Logout()
+	if err == nil {
+		var session whatsapp.Session
+		session, err = s.conn.Disconnect()
+		if err == nil {
+			err = s.writeSession(session)
+		}
+	}
+	if err != nil {
+		log.Println("WA error logout: ", err)
+		return false, err
+	}
+	return true, nil
+}
+
 func (s *Service) ClientExist(client string) bool {
 	jid := s.PrepareClientJID(client)
 	_, ok := s.conn.Store.Contacts[jid]
