@@ -133,9 +133,12 @@ func (s *Service) restoreSession() (ok bool, err error) {
 			}
 			return false, fmt.Errorf("restoring session failed: %w. Please try again. ", err)
 		}
+		return true, nil
 	}
-
-	return true, nil
+	if err != nil {
+		return false, fmt.Errorf("restoring session failed: %w. Please try again. ", err)
+	}
+	return false, nil
 }
 
 func (s *Service) loginSession() (ok bool, err error) {
