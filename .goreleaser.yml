@@ -1,0 +1,8 @@
+# .goreleaser.yml
+builds:
+  # You can have multiple builds defined as a yaml list
+  -
+
+    # Path to main.go file or main package.
+    # Default is `.`.
+    main: ./service/main.go
