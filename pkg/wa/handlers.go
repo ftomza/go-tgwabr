@@ -40,6 +40,10 @@ func (s *Service) handleMessage(message interface{}) {
 		return
 	}
 
+	if info.RemoteJid == "status@broadcast" {
+		return
+	}
+
 	name := s.conn.Store.Contacts[info.RemoteJid].Name
 	msg = &api.Message{
 		WAClient:       info.RemoteJid,
