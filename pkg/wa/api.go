@@ -55,7 +55,7 @@ func (s *Service) ClientExist(client string) bool {
 	jid := s.PrepareClientJID(client)
 	_, ok := s.conn.Store.Contacts[jid]
 	if !ok {
-		ok = pkg.StringInSlice(client, s.clients)
+		ok = pkg.StringInSlice(jid, s.clients)
 	}
 	return ok
 }

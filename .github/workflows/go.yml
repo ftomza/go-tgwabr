@@ -1,5 +1,8 @@
 name: Release
-on: [push]
+on:
+  create:
+    tags:
+      - v*
 jobs:
   lint:
     name: Lint

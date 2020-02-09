@@ -82,8 +82,12 @@ func (s *Service) login(onlyRestore bool) error {
 
 	if !ok && !onlyRestore {
 		if ok, err = s.loginSession(); err != nil {
-			return fmt.Errorf("error restore session: %w", err)
+			return fmt.Errorf("error login session: %w", err)
 		}
+	}
+
+	if !ok && !onlyRestore {
+		return fmt.Errorf("error bad status login ")
 	}
 
 	ok, err = s.conn.AdminTest()
@@ -135,9 +139,6 @@ func (s *Service) restoreSession() (ok bool, err error) {
 		}
 		return true, nil
 	}
-	if err != nil {
-		return false, fmt.Errorf("restoring session failed: %w. Please try again. ", err)
-	}
 	return false, nil
 }
 
@@ -179,7 +180,12 @@ func (s *Service) readSession() (whatsapp.Session, error) {
 	if err != nil {
 		return session, err
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Println("error close file: ", err)
+		}
+	}()
 
 	decoder := gob.NewDecoder(file)
 	if err = decoder.Decode(&session); err != nil {
@@ -195,7 +201,12 @@ func (s *Service) writeSession(session whatsapp.Session) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Println("error close file: ", err)
+		}
+	}()
 
 	encoder := gob.NewEncoder(file)
 	if err = encoder.Encode(session); err != nil {
