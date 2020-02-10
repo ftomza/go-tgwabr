@@ -31,7 +31,7 @@ func New(ctx context.Context) (service *Service, err error) {
 	if err == nil {
 		service.pointTime = pointTime
 	}
-	service.conn, err = whatsapp.NewConn(5 * time.Second)
+	service.conn, err = whatsapp.NewConn(30 * time.Second)
 	if err != nil {
 		return service, fmt.Errorf("error creating connection: %w", err)
 	}
