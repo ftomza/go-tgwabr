@@ -224,6 +224,9 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 		return
 	}
 
+	msgJoin := tgbotapi.NewMessage(s.mainGroup, fmt.Sprintf("Chat %s(%s) join to @%s", name, client, update.Message.From.UserName))
+	s.BotSend(msgJoin)
+
 	_, _ = s.bot.SetChatTitle(tgbotapi.SetChatTitleConfig{
 		ChatID: chat.TGChatID,
 		Title:  fmt.Sprintf("Chat with %s(%s)", name, client),
@@ -289,6 +292,8 @@ func (s *Service) CommandLeave(update tgbotapi.Update) {
 			return
 		}
 		txt = txt + fmt.Sprintf(" - '%s(%s)' OK\n", name, v.WAClient)
+		msgJoin := tgbotapi.NewMessage(s.mainGroup, fmt.Sprintf("@%s leave chat %s(%s)", update.Message.From.UserName, name, v.WAClient))
+		s.BotSend(msgJoin)
 	}
 	msg.Text = txt
 

@@ -84,13 +84,15 @@ func (s *Service) handleMessage(message interface{}) {
 		return
 	}
 
-	chat, err := db.GetChatByClient(msg.WAClient)
+	chat, err := db.GetChatByClient(info.RemoteJid)
 	if err != nil {
 		log.Println("Get chat store error: ", err)
 	}
 	chatID := int64(0)
 	if chat != nil {
 		chatID = chat.TGChatID
+	} else if info.FromMe {
+		return
 	}
 	tgMsg := &api.TGMessage{}
 	switch m := message.(type) {
