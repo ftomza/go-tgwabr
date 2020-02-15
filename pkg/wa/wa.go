@@ -18,6 +18,7 @@ import (
 type Service struct {
 	ctx     context.Context
 	conn    *whatsapp.Conn
+	id      string
 	clients []string
 	api.WA
 	pointTime uint64
@@ -31,6 +32,12 @@ func New(ctx context.Context) (service *Service, err error) {
 	if err == nil {
 		service.pointTime = pointTime
 	}
+	waId := os.Getenv("WA_ID")
+	if waId == "" {
+		return service, fmt.Errorf("WhatsApp ID is Empty")
+	}
+	service.id = waId
+
 	service.conn, err = whatsapp.NewConn(30 * time.Second)
 	if err != nil {
 		return service, fmt.Errorf("error creating connection: %w", err)

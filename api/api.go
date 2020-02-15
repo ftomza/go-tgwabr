@@ -25,6 +25,7 @@ type TGMessage struct {
 }
 
 type Message struct {
+	WAID           string
 	WAClient       string
 	WAName         string
 	WAMessageID    string
@@ -41,6 +42,7 @@ type Message struct {
 }
 
 type Chat struct {
+	WAID     string
 	WAClient string
 	TGChatID int64
 }
@@ -58,6 +60,7 @@ type WA interface {
 	GetContactPhoto(client string) (result string, err error)
 	GetShortClient(client string) string
 	PrepareClientJID(client string) string
+	GetID() string
 }
 
 type TG interface {
@@ -73,7 +76,7 @@ type Store interface {
 	GetMessageByWA(messageID string) (*Message, error)
 	ExistMessageByWA(messageID string) bool
 	ExistMessageByTG(messageID int, chatID int64) bool
-	GetChatByClient(client string) (*Chat, error)
+	GetChatByClient(client string, id string) (*Chat, error)
 	GetChatsByChatID(chatID int64) ([]*Chat, error)
 	SaveChat(chat *Chat) error
 	DeleteChat(chat *Chat) (bool, error)

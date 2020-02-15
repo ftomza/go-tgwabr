@@ -106,6 +106,7 @@ func (s *Service) HandleTextMessage(update tgbotapi.Update) {
 		return
 	}
 
+	item.WAID = wac.GetID()
 	item.WAClient = resp.Client
 	item.WAMessageID = resp.MessageID
 	item.WAName = resp.Name

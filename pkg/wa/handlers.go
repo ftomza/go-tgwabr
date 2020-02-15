@@ -46,6 +46,7 @@ func (s *Service) handleMessage(message interface{}) {
 
 	name := s.conn.Store.Contacts[info.RemoteJid].Name
 	msg = &api.Message{
+		WAID:           s.id,
 		WAClient:       info.RemoteJid,
 		WAName:         name,
 		WAMessageID:    info.Id,
@@ -84,7 +85,7 @@ func (s *Service) handleMessage(message interface{}) {
 		return
 	}
 
-	chat, err := db.GetChatByClient(info.RemoteJid)
+	chat, err := db.GetChatByClient(info.RemoteJid, s.id)
 	if err != nil {
 		log.Println("Get chat store error: ", err)
 	}

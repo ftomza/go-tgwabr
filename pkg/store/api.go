@@ -70,9 +70,9 @@ func (s *Store) ExistMessageByTG(messageID int, chatID int64) bool {
 	return ok
 }
 
-func (s *Store) GetChatByClient(client string) (chat *api.Chat, err error) {
+func (s *Store) GetChatByClient(client string, id string) (chat *api.Chat, err error) {
 	item := &Chat{}
-	ok, err := s.FindOne(s.db.Model(&Chat{}).Where(&Chat{WAClient: client}), item)
+	ok, err := s.FindOne(s.db.Model(&Chat{}).Where(&Chat{WAClient: client, WAID: id}), item)
 	if err != nil {
 		return
 	}
@@ -94,7 +94,7 @@ func (s *Store) GetChatsByChatID(chatID int64) (chats []*api.Chat, err error) {
 }
 
 func (s *Store) DeleteChat(chat *api.Chat) (bool, error) {
-	item, err := s.GetChatByClient(chat.WAClient)
+	item, err := s.GetChatByClient(chat.WAClient, chat.WAID)
 	if err != nil {
 		return false, err
 	}

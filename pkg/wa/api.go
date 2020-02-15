@@ -275,3 +275,7 @@ func (s *Service) PrepareClientJID(client string) string {
 	}
 	return fmt.Sprintf("%s@%s", client, jidPrefix)
 }
+
+func (s *Service) GetID() string {
+	return s.id
+}

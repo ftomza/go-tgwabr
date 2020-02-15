@@ -14,6 +14,7 @@ import (
 type Chat struct {
 	gorm.Model
 
+	WAID     string `gorm:"index"`
 	WAClient string `gorm:"index"`
 	TGChatID int64  `gorm:"index"`
 }
@@ -21,6 +22,7 @@ type Chat struct {
 type Message struct {
 	gorm.Model
 
+	WAID           string `gorm:"index"`
 	WAClient       string `gorm:"index"`
 	WAName         string
 	WAMessageID    string `gorm:"index"`

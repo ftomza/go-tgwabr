@@ -200,6 +200,7 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 	}
 
 	chat := api.Chat{
+		WAID:     wac.GetID(),
 		WAClient: wac.PrepareClientJID(client),
 		TGChatID: update.Message.Chat.ID,
 	}
@@ -292,7 +293,7 @@ func (s *Service) CommandLeave(update tgbotapi.Update) {
 			return
 		}
 		txt = txt + fmt.Sprintf(" - '%s(%s)' OK\n", name, v.WAClient)
-		msgJoin := tgbotapi.NewMessage(s.mainGroup, fmt.Sprintf("@%s leave chat %s(%s)", update.Message.From.UserName, name, v.WAClient))
+		msgJoin := tgbotapi.NewMessage(s.mainGroup, fmt.Sprintf("@%s leave chat %s(%s)", update.Message.From.UserName, name, wac.GetShortClient(v.WAClient)))
 		s.BotSend(msgJoin)
 	}
 	msg.Text = txt

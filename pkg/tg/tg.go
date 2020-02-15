@@ -5,16 +5,17 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"tgwabr/api"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 type Service struct {
-	ctx       context.Context
-	bot       *tgbotapi.BotAPI
-	mainGroup int64
-
+	ctx          context.Context
+	bot          *tgbotapi.BotAPI
+	mainGroup    int64
+	excludeChats []string
 	api.TG
 }
 
@@ -23,6 +24,8 @@ func New(ctx context.Context) (service *Service, err error) {
 	service = &Service{ctx: ctx}
 
 	mainGroupStr := os.Getenv("TG_MAIN_GROUP")
+	excludeChatsStr := os.Getenv("EXC_CHAT")
+	service.excludeChats = strings.Split(excludeChatsStr, ",")
 	mainGroup, err := strconv.ParseInt(mainGroupStr, 10, 64)
 	service.mainGroup = mainGroup
 	service.bot, err = tgbotapi.NewBotAPI(os.Getenv("TG_API_TOKEN"))
@@ -107,6 +110,13 @@ func (s *Service) mainLoop(updates tgbotapi.UpdatesChannel) {
 
 		if update.Message == nil { // ignore any non-Message updates
 			continue
+		}
+
+		for _, v := range s.excludeChats {
+			id, _ := strconv.ParseInt(v, 10, 64)
+			if id == update.Message.Chat.ID {
+				return
+			}
 		}
 
 		if !s.IsAuthorized(update) {
