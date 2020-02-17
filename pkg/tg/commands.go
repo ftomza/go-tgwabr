@@ -460,6 +460,7 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 		v.TGTimestamp = tgMsg.Timestamp
 		v.TGUserName = tgMsg.UserName
 		v.TGFwdMessageID = tgMsg.FwdMessageID
+		v.Chatted = api.ChattedYes
 
 		err = db.SaveMessage(v)
 		if err != nil {
