@@ -9,7 +9,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-func (s *Service) SendQR(code string) (msg *api.TGMessage, err error) {
+func (s *Service) SendQR(mgChatID int64, code string) (msg *api.TGMessage, err error) {
 
 	png, err := qrcode.Encode(code, qrcode.Medium, 256)
 	if err != nil {
@@ -19,7 +19,7 @@ func (s *Service) SendQR(code string) (msg *api.TGMessage, err error) {
 		Name:  "WhatsAppLoginQRCode",
 		Bytes: png,
 	}
-	req := tgbotapi.NewPhotoUpload(s.mainGroup, qrFile)
+	req := tgbotapi.NewPhotoUpload(mgChatID, qrFile)
 	response, err := s.bot.Send(req)
 	if err != nil {
 		return nil, err
@@ -28,9 +28,7 @@ func (s *Service) SendQR(code string) (msg *api.TGMessage, err error) {
 }
 
 func (s *Service) SendMessage(chatID int64, text string) (msg *api.TGMessage, err error) {
-	if chatID == 0 {
-		chatID = s.mainGroup
-	}
+
 	req := tgbotapi.NewMessage(chatID, text)
 	response, err := s.bot.Send(req)
 	if err != nil {
@@ -40,9 +38,7 @@ func (s *Service) SendMessage(chatID int64, text string) (msg *api.TGMessage, er
 }
 
 func (s *Service) SendImage(chatID int64, reader io.Reader, caption string) (msg *api.TGMessage, err error) {
-	if chatID == 0 {
-		chatID = s.mainGroup
-	}
+
 	req := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileReader{
 		Name:   caption,
 		Reader: reader,
@@ -55,15 +51,48 @@ func (s *Service) SendImage(chatID int64, reader io.Reader, caption string) (msg
 	return Message(response).ToAPIMessage(), nil
 }
 
-func (s *Service) SendDocument(chatID int64, reader io.Reader, fileName string) (msg *api.TGMessage, err error) {
-	if chatID == 0 {
-		chatID = s.mainGroup
+func (s *Service) SendAudio(chatID int64, reader io.Reader) (msg *api.TGMessage, err error) {
+
+	req := tgbotapi.NewAudioUpload(chatID, tgbotapi.FileReader{
+		Reader: reader,
+		Size:   -1,
+	})
+	response, err := s.bot.Send(req)
+	if err != nil {
+		return nil, err
 	}
+	return Message(response).ToAPIMessage(), nil
+}
+
+func (s *Service) SendVideo(chatID int64, reader io.Reader) (msg *api.TGMessage, err error) {
+
+	req := tgbotapi.NewVideoUpload(chatID, tgbotapi.FileReader{
+		Reader: reader,
+		Size:   -1,
+	})
+	response, err := s.bot.Send(req)
+	if err != nil {
+		return nil, err
+	}
+	return Message(response).ToAPIMessage(), nil
+}
+
+func (s *Service) SendDocument(chatID int64, reader io.Reader, fileName string) (msg *api.TGMessage, err error) {
+
 	req := tgbotapi.NewDocumentUpload(chatID, tgbotapi.FileReader{
 		Name:   fileName,
 		Reader: reader,
 		Size:   -1,
 	})
+	response, err := s.bot.Send(req)
+	if err != nil {
+		return nil, err
+	}
+	return Message(response).ToAPIMessage(), nil
+}
+
+func (s *Service) SendLocation(chatID int64, lat, lon float64) (msg *api.TGMessage, err error) {
+	req := tgbotapi.NewLocation(chatID, lat, lon)
 	response, err := s.bot.Send(req)
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package tg
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -12,10 +13,9 @@ import (
 )
 
 type Service struct {
-	ctx          context.Context
-	bot          *tgbotapi.BotAPI
-	mainGroup    int64
-	excludeChats []string
+	ctx        context.Context
+	bot        *tgbotapi.BotAPI
+	mainGroups []int64
 	api.TG
 }
 
@@ -23,11 +23,15 @@ func New(ctx context.Context) (service *Service, err error) {
 
 	service = &Service{ctx: ctx}
 
-	mainGroupStr := os.Getenv("TG_MAIN_GROUP")
-	excludeChatsStr := os.Getenv("EXC_CHAT")
-	service.excludeChats = strings.Split(excludeChatsStr, ",")
-	mainGroup, err := strconv.ParseInt(mainGroupStr, 10, 64)
-	service.mainGroup = mainGroup
+	mainGroupsStr := os.Getenv("TG_MAIN_GROUPS")
+	for _, v := range strings.Split(mainGroupsStr, ",") {
+		g, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return service, fmt.Errorf("error parse ID: %w", err)
+		}
+		service.mainGroups = append(service.mainGroups, g)
+	}
+
 	service.bot, err = tgbotapi.NewBotAPI(os.Getenv("TG_API_TOKEN"))
 	if err != nil {
 		return
@@ -87,9 +91,28 @@ func (s *Service) BotSend(msg tgbotapi.Chattable) (response tgbotapi.Message) {
 
 func (s *Service) IsAuthorized(update tgbotapi.Update) bool {
 
+	for _, v := range s.mainGroups {
+		if s.IsMemberMainGroup(update.Message.From.ID, v) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *Service) IsMainGroup(id int64) bool {
+	for _, v := range s.mainGroups {
+		if v == id {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Service) IsMemberMainGroup(userID int, mgId int64) bool {
 	member, err := s.bot.GetChatMember(tgbotapi.ChatConfigWithUser{
-		ChatID: s.mainGroup,
-		UserID: update.Message.From.ID,
+		ChatID: mgId,
+		UserID: userID,
 	})
 
 	if err != nil {
@@ -97,11 +120,11 @@ func (s *Service) IsAuthorized(update tgbotapi.Update) bool {
 		return false
 	}
 
-	if !(member.IsMember() || member.IsCreator() || member.IsAdministrator()) {
-		return false
+	if member.IsMember() || member.IsCreator() || member.IsAdministrator() {
+		return true
 	}
 
-	return true
+	return false
 }
 
 func (s *Service) mainLoop(updates tgbotapi.UpdatesChannel) {
@@ -110,13 +133,6 @@ func (s *Service) mainLoop(updates tgbotapi.UpdatesChannel) {
 
 		if update.Message == nil { // ignore any non-Message updates
 			continue
-		}
-
-		for _, v := range s.excludeChats {
-			id, _ := strconv.ParseInt(v, 10, 64)
-			if id == update.Message.Chat.ID {
-				return
-			}
 		}
 
 		if !s.IsAuthorized(update) {

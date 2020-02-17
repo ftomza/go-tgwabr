@@ -28,7 +28,7 @@ func Init() func() {
 	ctx = appCtx.NewDB(ctx, storeImpl)
 
 	if waImpl, err = wa.New(ctx); err != nil {
-		log.Fatalln("Fail WA Instance: ", err)
+		log.Fatalln("Fail WAInstance Instance: ", err)
 	}
 
 	ctx = appCtx.NewWA(ctx, waImpl)
@@ -48,7 +48,7 @@ func Init() func() {
 
 	return func() {
 		if err = waImpl.ShutDown(); err != nil {
-			log.Println("Fail WA Instance: ", err)
+			log.Println("Fail WAInstance Instance: ", err)
 		}
 		if err = tgImpl.ShutDown(); err != nil {
 			log.Println("Fail TG Instance: ", err)

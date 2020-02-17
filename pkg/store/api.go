@@ -3,6 +3,7 @@ package store
 import (
 	"log"
 	"tgwabr/api"
+	"time"
 )
 
 func (s *Store) SaveMessage(message *api.Message) (err error) {
@@ -42,6 +43,49 @@ func (s *Store) SaveChat(chat *api.Chat) (err error) {
 	return
 }
 
+func (s *Store) SaveMainGroup(mg *api.MainGroup) (err error) {
+
+	item := &MainGroup{}
+	_, err = s.FindOne(s.db.Model(&MainGroup{}).Where(&MainGroup{TGChatID: mg.TGChatID}), item)
+	if err != nil {
+		return err
+	}
+	id := item.ID
+	item = APIMainGroup(*mg).ToMainGroup()
+	item.ID = id
+	err = s.db.Save(item).Error
+	if err != nil {
+		return err
+	}
+	return
+}
+
+func (s *Store) GetMainGroupByName(name string) (apiItem *api.MainGroup, err error) {
+
+	item := &MainGroup{}
+	ok, err := s.FindOne(s.db.Model(&MainGroup{}).Where(&MainGroup{Name: name}), item)
+	if err != nil {
+		return
+	}
+	if !ok {
+		return nil, nil
+	}
+	return item.ToAPIMainGroup(), nil
+}
+
+func (s *Store) GetMainGroupByTGID(id int64) (apiItem *api.MainGroup, err error) {
+
+	item := &MainGroup{}
+	ok, err := s.FindOne(s.db.Model(&MainGroup{}).Where(&MainGroup{TGChatID: id}), item)
+	if err != nil {
+		return
+	}
+	if !ok {
+		return nil, nil
+	}
+	return item.ToAPIMainGroup(), nil
+}
+
 func (s *Store) GetMessageByWA(messageID string) (apiItem *api.Message, err error) {
 	item := &Message{}
 	ok, err := s.FindOne(s.db.Model(&Message{}).Where(&Message{WAMessageID: messageID}), item)
@@ -72,7 +116,7 @@ func (s *Store) ExistMessageByTG(messageID int, chatID int64) bool {
 
 func (s *Store) GetChatByClient(client string, id string) (chat *api.Chat, err error) {
 	item := &Chat{}
-	ok, err := s.FindOne(s.db.Model(&Chat{}).Where(&Chat{WAClient: client, WAID: id}), item)
+	ok, err := s.FindOne(s.db.Model(&Chat{}).Where(&Chat{WAClient: client, MGID: id}), item)
 	if err != nil {
 		return
 	}
@@ -93,8 +137,22 @@ func (s *Store) GetChatsByChatID(chatID int64) (chats []*api.Chat, err error) {
 	return items.ToAPIChats(), nil
 }
 
+func (s *Store) GetMessagesNotChattedByClient(client string) (msg []*api.Message, err error) {
+
+	items := Messages{}
+	err = s.db.Model(&Message{}).Find(&items, &Message{Chatted: api.ChattedNo, WAClient: client}).Error
+	if err != nil {
+		return
+	}
+	return items.ToAPIMessages(), nil
+}
+
+func (s *Store) GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) ([]*api.Stat, error) {
+	return nil, nil
+}
+
 func (s *Store) DeleteChat(chat *api.Chat) (bool, error) {
-	item, err := s.GetChatByClient(chat.WAClient, chat.WAID)
+	item, err := s.GetChatByClient(chat.WAClient, chat.MGID)
 	if err != nil {
 		return false, err
 	}

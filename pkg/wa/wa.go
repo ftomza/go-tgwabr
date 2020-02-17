@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"tgwabr/api"
 	appCtx "tgwabr/context"
 	"time"
@@ -16,59 +17,81 @@ import (
 )
 
 type Service struct {
-	ctx     context.Context
-	conn    *whatsapp.Conn
-	id      string
-	clients []string
+	instances map[int64]*Instance
 	api.WA
+}
+
+type Instance struct {
+	ctx  context.Context
+	id   int64
+	conn *whatsapp.Conn
+	api.WAInstance
+	clients   []string
 	pointTime uint64
 }
 
 func New(ctx context.Context) (service *Service, err error) {
 
-	service = &Service{ctx: ctx, clients: []string{}}
+	service = &Service{instances: map[int64]*Instance{}}
 	pointTimeStr := os.Getenv("WA_POINT_TIME")
 	pointTime, err := strconv.ParseUint(pointTimeStr, 10, 64)
-	if err == nil {
-		service.pointTime = pointTime
-	}
-	waId := os.Getenv("WA_ID")
-	if waId == "" {
-		return service, fmt.Errorf("WhatsApp ID is Empty")
-	}
-	service.id = waId
-
-	service.conn, err = whatsapp.NewConn(30 * time.Second)
 	if err != nil {
-		return service, fmt.Errorf("error creating connection: %w", err)
+		pointTime = 0
 	}
 
-	service.conn.AddHandler(service)
+	items := strings.Split(os.Getenv("TG_MAIN_GROUPS"), ",")
 
-	if err = service.login(true); err != nil {
-		return service, fmt.Errorf("error login: %w", err)
+	for _, v := range items {
+
+		id, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return service, fmt.Errorf("error parse ID: %w", err)
+		}
+
+		instance := &Instance{ctx: ctx, clients: []string{}, id: id, pointTime: pointTime}
+
+		instance.conn, err = whatsapp.NewConn(30 * time.Second)
+		if err != nil {
+			return service, fmt.Errorf("error creating connection: %w", err)
+		}
+
+		instance.conn.AddHandler(instance)
+		if err = instance.login(true); err != nil {
+			return service, fmt.Errorf("error login: %w", err)
+		}
+
+		instance.WAInstance = instance
+		service.instances[id] = instance
 	}
 
-	service.WA = service
 	return
 }
 
 func (s *Service) UpdateCTX(ctx context.Context) {
-	s.ctx = ctx
+	for k := range s.instances {
+		s.instances[k].ctx = ctx
+	}
 }
 
 func (s *Service) ShutDown() error {
-	session, err := s.conn.Disconnect()
-	if err != nil {
-		return fmt.Errorf("error disconnecting: %w", err)
-	}
-	if err = s.writeSession(session); err != nil {
-		return fmt.Errorf("error saving session: %w", err)
+	for _, v := range s.instances {
+		session, err := v.conn.Disconnect()
+		if err != nil {
+			return fmt.Errorf("error disconnecting: %w", err)
+		}
+		if err = v.writeSession(session); err != nil {
+			return fmt.Errorf("error saving session: %w", err)
+		}
 	}
 	return nil
 }
 
-func (s *Service) login(onlyRestore bool) error {
+func (s *Service) GetInstance(id int64) (api.WAInstance, bool) {
+	item, ok := s.instances[id]
+	return item, ok
+}
+
+func (s *Instance) login(onlyRestore bool) error {
 
 	var ok bool
 	var err error
@@ -104,7 +127,7 @@ func (s *Service) login(onlyRestore bool) error {
 		}
 	}
 
-	log.Println("WA Status: ", ok)
+	log.Println("WAInstance Status: ", ok)
 
 	versionServer, err := whatsapp.CheckCurrentServerVersion()
 	if err != nil {
@@ -119,7 +142,7 @@ func (s *Service) login(onlyRestore bool) error {
 	return nil
 }
 
-func (s *Service) restore() (ok bool, err error) {
+func (s *Instance) restore() (ok bool, err error) {
 	err = s.conn.Restore()
 	if err != nil && (errors.Is(err, whatsapp.ErrAlreadyConnected) || errors.Is(err, whatsapp.ErrAlreadyLoggedIn)) {
 		return true, nil
@@ -129,7 +152,7 @@ func (s *Service) restore() (ok bool, err error) {
 	return true, nil
 }
 
-func (s *Service) restoreSession() (ok bool, err error) {
+func (s *Instance) restoreSession() (ok bool, err error) {
 	session, err := s.readSession()
 	if err == nil && session.ClientId != "" {
 		session, err = s.conn.RestoreWithSession(session)
@@ -149,7 +172,7 @@ func (s *Service) restoreSession() (ok bool, err error) {
 	return false, nil
 }
 
-func (s *Service) loginSession() (ok bool, err error) {
+func (s *Instance) loginSession() (ok bool, err error) {
 	qr := make(chan string)
 	tg, _ := appCtx.FromTG(s.ctx)
 	var tgMsg *api.TGMessage
@@ -157,7 +180,7 @@ func (s *Service) loginSession() (ok bool, err error) {
 		if tg == nil {
 			tg, _ = appCtx.FromTG(s.ctx)
 		}
-		tgMsg, err = tg.SendQR(<-qr)
+		tgMsg, err = tg.SendQR(s.id, <-qr)
 		if err != nil {
 			log.Printf("error send QR: %v\n", err)
 		}
@@ -180,10 +203,9 @@ func (s *Service) loginSession() (ok bool, err error) {
 	return true, nil
 }
 
-func (s *Service) readSession() (whatsapp.Session, error) {
+func (s *Instance) readSession() (whatsapp.Session, error) {
 	session := whatsapp.Session{}
-	name := os.Getenv("NAME_INSTANCE")
-	file, err := os.Open(name + "_WASession.gob")
+	file, err := os.Open(fmt.Sprintf("%d_wa_instance_session.gob", s.id))
 	if err != nil {
 		return session, err
 	}
@@ -202,9 +224,8 @@ func (s *Service) readSession() (whatsapp.Session, error) {
 	return session, nil
 }
 
-func (s *Service) writeSession(session whatsapp.Session) error {
-	name := os.Getenv("NAME_INSTANCE")
-	file, err := os.Create(name + "_WASession.gob")
+func (s *Instance) writeSession(session whatsapp.Session) error {
+	file, err := os.Create(fmt.Sprintf("%d_wa_instance_session.gob", s.id))
 	if err != nil {
 		return err
 	}

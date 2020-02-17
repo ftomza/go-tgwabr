@@ -1,10 +1,15 @@
 package api
 
-import "io"
+import (
+	"io"
+	"time"
+)
 
 var (
-	DIRECTION_TG2WA = "tg2wa"
-	DIRECTION_WA2TG = "wa2tg"
+	DirectionTg2wa = "tg2wa"
+	DirectionWa2tg = "wa2tg"
+	ChattedYes     = "yes"
+	ChattedNo      = "no"
 )
 
 type WAMessage struct {
@@ -25,7 +30,7 @@ type TGMessage struct {
 }
 
 type Message struct {
-	WAID           string
+	MGID           string
 	WAClient       string
 	WAName         string
 	WAMessageID    string
@@ -38,16 +43,33 @@ type Message struct {
 	TGFwdMessageID int
 	TGFwdChatID    int64
 	Direction      string
+	Chatted        string
 	Text           string
 }
 
 type Chat struct {
-	WAID     string
+	MGID     string
 	WAClient string
 	TGChatID int64
 }
 
+type MainGroup struct {
+	TGChatID int64
+	Name     string
+}
+
+type Stat struct {
+	Date       time.Time
+	TGUserName string
+	WAClient   string
+	Count      int
+}
+
 type WA interface {
+	GetInstance(id int64) (WAInstance, bool)
+}
+
+type WAInstance interface {
 	GetStatusLogin() bool
 	DoLogin() (bool, error)
 	DoLogout() (bool, error)
@@ -56,6 +78,9 @@ type WA interface {
 	SendMessage(client, text, QuotedID, Quoted string) (msg *WAMessage, err error)
 	SendImage(client string, reader io.Reader, mime string, QuotedID string, Quoted string) (msg *WAMessage, err error)
 	SendDocument(client string, reader io.Reader, mime string, fileName string, QuotedID string, Quoted string) (msg *WAMessage, err error)
+	SendAudio(client string, reader io.Reader, mime string, QuotedID string, Quoted string) (msg *WAMessage, err error)
+	SendVideo(client string, reader io.Reader, mime string, QuotedID string, Quoted string) (msg *WAMessage, err error)
+	SendLocation(client string, lat, lon float64, QuotedID string, Quoted string) (msg *WAMessage, err error)
 	GetHistory(client string, size int) (result []string, err error)
 	GetContactPhoto(client string) (result string, err error)
 	GetShortClient(client string) string
@@ -64,21 +89,29 @@ type WA interface {
 }
 
 type TG interface {
-	SendQR(code string) (msg *TGMessage, err error)
+	SendQR(mgChatID int64, code string) (msg *TGMessage, err error)
 	SendMessage(chatID int64, text string) (msg *TGMessage, err error)
 	SendImage(chatID int64, reader io.Reader, caption string) (msg *TGMessage, err error)
+	SendAudio(chatID int64, reader io.Reader) (msg *TGMessage, err error)
+	SendVideo(chatID int64, reader io.Reader) (msg *TGMessage, err error)
 	SendDocument(chatID int64, reader io.Reader, fileName string) (msg *TGMessage, err error)
+	SendLocation(chatID int64, lat, lon float64) (msg *TGMessage, err error)
 	DeleteMessage(chatID int64, messageID int) (err error)
 }
 
 type Store interface {
+	GetMainGroupByName(name string) (apiItem *MainGroup, err error)
+	GetMainGroupByTGID(id int64) (apiItem *MainGroup, err error)
+	SaveMainGroup(mg *MainGroup) (err error)
 	SaveMessage(message *Message) error
 	GetMessageByWA(messageID string) (*Message, error)
+	GetMessagesNotChattedByClient(client string) ([]*Message, error)
 	ExistMessageByWA(messageID string) bool
 	ExistMessageByTG(messageID int, chatID int64) bool
 	GetChatByClient(client string, id string) (*Chat, error)
 	GetChatsByChatID(chatID int64) ([]*Chat, error)
 	SaveChat(chat *Chat) error
+	GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) ([]*Stat, error)
 	DeleteChat(chat *Chat) (bool, error)
 }
 

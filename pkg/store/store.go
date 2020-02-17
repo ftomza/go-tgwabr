@@ -11,10 +11,17 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
+type MainGroup struct {
+	gorm.Model
+
+	TGChatID int64  `gorm:"index"`
+	Name     string `gorm:"index"`
+}
+
 type Chat struct {
 	gorm.Model
 
-	WAID     string `gorm:"index"`
+	MGID     string `gorm:"index"`
 	WAClient string `gorm:"index"`
 	TGChatID int64  `gorm:"index"`
 }
@@ -22,7 +29,7 @@ type Chat struct {
 type Message struct {
 	gorm.Model
 
-	WAID           string `gorm:"index"`
+	MGID           string `gorm:"index"`
 	WAClient       string `gorm:"index"`
 	WAName         string
 	WAMessageID    string `gorm:"index"`
@@ -34,6 +41,7 @@ type Message struct {
 	TGTimestamp    int
 	TGFwdMessageID int    `gorm:"index"`
 	Direction      string `gorm:"index"`
+	Chatted        string `gorm:"index"`
 	Text           string
 }
 
@@ -85,6 +93,30 @@ func (a Chats) ToAPIChats() []*api.Chat {
 	return list
 }
 
+type APIMainGroup api.MainGroup
+
+func (a APIMainGroup) ToMainGroup() *MainGroup {
+	item := &MainGroup{}
+	pkg.MustCopyValue(item, &a)
+	return item
+}
+
+func (a MainGroup) ToAPIMainGroup() *api.MainGroup {
+	item := &api.MainGroup{}
+	pkg.MustCopyValue(item, &a)
+	return item
+}
+
+type MainGroups []*MainGroup
+
+func (a MainGroups) ToAPIMainGroups() []*api.MainGroup {
+	list := make([]*api.MainGroup, len(a))
+	for i, item := range a {
+		list[i] = item.ToAPIMainGroup()
+	}
+	return list
+}
+
 type Store struct {
 	ctx context.Context
 	db  *gorm.DB
@@ -108,6 +140,7 @@ func New(ctx context.Context) (store *Store, err error) {
 	// Migrate the schema
 	store.db.AutoMigrate(&Chat{})
 	store.db.AutoMigrate(&Message{})
+	store.db.AutoMigrate(&MainGroup{})
 
 	return
 }

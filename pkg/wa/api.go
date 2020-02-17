@@ -15,27 +15,27 @@ import (
 	waproto "github.com/Rhymen/go-whatsapp/binary/proto"
 )
 
-func (s *Service) GetStatusLogin() bool {
+func (s *Instance) GetStatusLogin() bool {
 	pong, err := s.conn.AdminTest()
 
 	if !pong || err != nil {
-		log.Println("WA error pinging: ", err)
+		log.Println("WAInstance error pinging: ", err)
 		return false
 	}
 
 	return true
 }
 
-func (s *Service) DoLogin() (ok bool, err error) {
+func (s *Instance) DoLogin() (ok bool, err error) {
 	err = s.login(false)
 	if err != nil {
-		log.Println("WA error login: ", err)
+		log.Println("WAInstance error login: ", err)
 		return false, err
 	}
 	return true, nil
 }
 
-func (s *Service) DoLogout() (bool, error) {
+func (s *Instance) DoLogout() (bool, error) {
 	err := s.conn.Logout()
 	if err == nil {
 		var session whatsapp.Session
@@ -45,13 +45,13 @@ func (s *Service) DoLogout() (bool, error) {
 		}
 	}
 	if err != nil {
-		log.Println("WA error logout: ", err)
+		log.Println("WAInstance error logout: ", err)
 		return false, err
 	}
 	return true, nil
 }
 
-func (s *Service) ClientExist(client string) bool {
+func (s *Instance) ClientExist(client string) bool {
 	jid := s.PrepareClientJID(client)
 	_, ok := s.conn.Store.Contacts[jid]
 	if !ok {
@@ -60,7 +60,7 @@ func (s *Service) ClientExist(client string) bool {
 	return ok
 }
 
-func (s *Service) GetShortClient(client string) string {
+func (s *Instance) GetShortClient(client string) string {
 	parts := strings.Split(client, "@")
 	if len(parts) > 1 {
 		return parts[0]
@@ -68,7 +68,7 @@ func (s *Service) GetShortClient(client string) string {
 	return client
 }
 
-func (s *Service) GetClientName(client string) string {
+func (s *Instance) GetClientName(client string) string {
 	v, ok := s.conn.Store.Contacts[s.PrepareClientJID(client)]
 	if ok {
 		return v.Name
@@ -81,7 +81,7 @@ func (s *Service) GetClientName(client string) string {
 	}
 }
 
-func (s *Service) SendMessage(client, text, QuotedID, Quoted string) (msg *api.WAMessage, err error) {
+func (s *Instance) SendMessage(client, text, QuotedID, Quoted string) (msg *api.WAMessage, err error) {
 	client = s.PrepareClientJID(client)
 	item := whatsapp.TextMessage{
 		Info: whatsapp.MessageInfo{
@@ -116,7 +116,7 @@ func (s *Service) SendMessage(client, text, QuotedID, Quoted string) (msg *api.W
 	}, nil
 }
 
-func (s *Service) SendImage(client string, reader io.Reader, mime string, QuotedID string, Quoted string) (msg *api.WAMessage, err error) {
+func (s *Instance) SendImage(client string, reader io.Reader, mime string, QuotedID string, Quoted string) (msg *api.WAMessage, err error) {
 	client = s.PrepareClientJID(client)
 	item := whatsapp.ImageMessage{
 		Info: whatsapp.MessageInfo{
@@ -153,7 +153,7 @@ func (s *Service) SendImage(client string, reader io.Reader, mime string, Quoted
 	}, nil
 }
 
-func (s *Service) SendDocument(client string, reader io.Reader, mime string, fileName string, QuotedID string, Quoted string) (msg *api.WAMessage, err error) {
+func (s *Instance) SendDocument(client string, reader io.Reader, mime string, fileName string, QuotedID string, Quoted string) (msg *api.WAMessage, err error) {
 	client = s.PrepareClientJID(client)
 	item := whatsapp.DocumentMessage{
 		Info: whatsapp.MessageInfo{
@@ -190,8 +190,117 @@ func (s *Service) SendDocument(client string, reader io.Reader, mime string, fil
 	}, nil
 }
 
+func (s *Instance) SendAudio(client string, reader io.Reader, mime string, QuotedID string, Quoted string) (msg *api.WAMessage, err error) {
+	client = s.PrepareClientJID(client)
+	item := whatsapp.AudioMessage{
+		Info: whatsapp.MessageInfo{
+			RemoteJid: client,
+		},
+		Type:    mime,
+		Content: reader,
+	}
+	if len(QuotedID) != 0 {
+		msgQuotedProto := waproto.Message{
+			Conversation: &Quoted,
+		}
+
+		ctxQuotedInfo := whatsapp.ContextInfo{
+			QuotedMessageID: QuotedID,
+			QuotedMessage:   &msgQuotedProto,
+			Participant:     client,
+		}
+
+		item.ContextInfo = ctxQuotedInfo
+	}
+
+	msgId, err := s.conn.Send(item)
+	if err != nil {
+		return nil, err
+	}
+	name := s.GetClientName(client)
+	return &api.WAMessage{
+		Client:    client,
+		Name:      name,
+		MessageID: msgId,
+		Timestamp: uint64(time.Now().Unix()),
+	}, nil
+}
+
+func (s *Instance) SendVideo(client string, reader io.Reader, mime string, QuotedID string, Quoted string) (msg *api.WAMessage, err error) {
+	client = s.PrepareClientJID(client)
+	item := whatsapp.VideoMessage{
+		Info: whatsapp.MessageInfo{
+			RemoteJid: client,
+		},
+		Type:    mime,
+		Content: reader,
+	}
+	if len(QuotedID) != 0 {
+		msgQuotedProto := waproto.Message{
+			Conversation: &Quoted,
+		}
+
+		ctxQuotedInfo := whatsapp.ContextInfo{
+			QuotedMessageID: QuotedID,
+			QuotedMessage:   &msgQuotedProto,
+			Participant:     client,
+		}
+
+		item.ContextInfo = ctxQuotedInfo
+	}
+
+	msgId, err := s.conn.Send(item)
+	if err != nil {
+		return nil, err
+	}
+	name := s.GetClientName(client)
+	return &api.WAMessage{
+		Client:    client,
+		Name:      name,
+		MessageID: msgId,
+		Timestamp: uint64(time.Now().Unix()),
+	}, nil
+}
+
+func (s *Instance) SendLocation(client string, lat, lon float64, QuotedID string, Quoted string) (msg *api.WAMessage, err error) {
+
+	client = s.PrepareClientJID(client)
+	item := whatsapp.LocationMessage{
+		Info: whatsapp.MessageInfo{
+			RemoteJid: client,
+		},
+		DegreesLongitude: lon,
+		DegreesLatitude:  lat,
+	}
+	if len(QuotedID) != 0 {
+		msgQuotedProto := waproto.Message{
+			Conversation: &Quoted,
+		}
+
+		ctxQuotedInfo := whatsapp.ContextInfo{
+			QuotedMessageID: QuotedID,
+			QuotedMessage:   &msgQuotedProto,
+			Participant:     client,
+		}
+
+		item.ContextInfo = ctxQuotedInfo
+	}
+
+	msgId, err := s.conn.Send(item)
+	if err != nil {
+		return nil, err
+	}
+	name := s.GetClientName(client)
+	return &api.WAMessage{
+		Client:    client,
+		Name:      name,
+		MessageID: msgId,
+		Timestamp: uint64(time.Now().Unix()),
+	}, nil
+}
+
 type historyHandler struct {
-	s        *Service
+	s        *Instance
 	messages []string
 }
 
@@ -222,10 +331,9 @@ func (h *historyHandler) HandleTextMessage(message whatsapp.TextMessage) {
 	date := time.Unix(int64(message.Info.Timestamp), 0)
 	h.messages = append(h.messages, fmt.Sprintf("%s %s: %s", date,
 		screenName, message.Text))
-
 }
 
-func (s *Service) GetHistory(client string, size int) (result []string, err error) {
+func (s *Instance) GetHistory(client string, size int) (result []string, err error) {
 	client = s.PrepareClientJID(client)
 	handler := &historyHandler{s: s}
 
@@ -237,7 +345,7 @@ func (s *Service) GetHistory(client string, size int) (result []string, err erro
 	return handler.messages, nil
 }
 
-func (s *Service) GetContactPhoto(client string) (result string, err error) {
+func (s *Instance) GetContactPhoto(client string) (result string, err error) {
 	client = s.PrepareClientJID(client)
 	type ThumbUrl struct {
 		EURL   string `json:"eurl"`
@@ -265,7 +373,7 @@ func (s *Service) GetContactPhoto(client string) (result string, err error) {
 
 }
 
-func (s *Service) PrepareClientJID(client string) string {
+func (s *Instance) PrepareClientJID(client string) string {
 	if strings.Count(client, "@") > 0 {
 		return client
 	}
@@ -276,6 +384,6 @@ func (s *Service) PrepareClientJID(client string) string {
 	return fmt.Sprintf("%s@%s", client, jidPrefix)
 }
 
-func (s *Service) GetID() string {
-	return s.id
+func (s *Instance) GetID() string {
+	return fmt.Sprintf("%d", s.id)
 }

@@ -15,7 +15,7 @@ import (
 	"github.com/Rhymen/go-whatsapp"
 )
 
-func (s *Service) handleMessage(message interface{}) {
+func (s *Instance) handleMessage(message interface{}) {
 	msg := &api.Message{}
 	var info whatsapp.MessageInfo
 	switch m := message.(type) {
@@ -30,6 +30,18 @@ func (s *Service) handleMessage(message interface{}) {
 	case whatsapp.DocumentMessage:
 		info = m.Info
 		msg.Text = fmt.Sprintf("%s (%s)", m.Title, m.Type)
+		msg.WAFwdMessageID = m.ContextInfo.QuotedMessageID
+	case whatsapp.AudioMessage:
+		info = m.Info
+		msg.Text = fmt.Sprintf("%s", m.Type)
+		msg.WAFwdMessageID = m.ContextInfo.QuotedMessageID
+	case whatsapp.VideoMessage:
+		info = m.Info
+		msg.Text = fmt.Sprintf("%s (%s)", m.Caption, m.Type)
+		msg.WAFwdMessageID = m.ContextInfo.QuotedMessageID
+	case whatsapp.LocationMessage:
+		info = m.Info
+		msg.Text = fmt.Sprintf("%s", m.Name)
 		msg.WAFwdMessageID = m.ContextInfo.QuotedMessageID
 	default:
 		log.Println(fmt.Sprintf("Type not implement %T", m))
@@ -46,12 +58,13 @@ func (s *Service) handleMessage(message interface{}) {
 
 	name := s.conn.Store.Contacts[info.RemoteJid].Name
 	msg = &api.Message{
-		WAID:           s.id,
+		MGID:           s.GetID(),
 		WAClient:       info.RemoteJid,
 		WAName:         name,
 		WAMessageID:    info.Id,
 		WATimestamp:    info.Timestamp,
 		WAFwdMessageID: msg.WAFwdMessageID,
+		Chatted:        api.ChattedNo,
 		Text:           msg.Text,
 	}
 
@@ -85,13 +98,14 @@ func (s *Service) handleMessage(message interface{}) {
 		return
 	}
 
-	chat, err := db.GetChatByClient(info.RemoteJid, s.id)
+	chat, err := db.GetChatByClient(info.RemoteJid, s.GetID())
 	if err != nil {
 		log.Println("Get chat store error: ", err)
 	}
-	chatID := int64(0)
+	chatID := s.id
 	if chat != nil {
 		chatID = chat.TGChatID
+		msg.Chatted = api.ChattedYes
 	} else if info.FromMe {
 		return
 	}
@@ -127,6 +141,22 @@ func (s *Service) handleMessage(message interface{}) {
 			buf := bytes.NewReader(raw)
 			tgMsg, err = tg.SendDocument(chatID, buf, m.FileName)
 		}
+	case whatsapp.AudioMessage:
+		var raw []byte
+		raw, err = m.Download()
+		if err == nil {
+			buf := bytes.NewReader(raw)
+			tgMsg, err = tg.SendAudio(chatID, buf)
+		}
+	case whatsapp.VideoMessage:
+		var raw []byte
+		raw, err = m.Download()
+		if err == nil {
+			buf := bytes.NewReader(raw)
+			tgMsg, err = tg.SendVideo(chatID, buf)
+		}
+	case whatsapp.LocationMessage:
+		tgMsg, err = tg.SendLocation(chatID, m.DegreesLatitude, m.DegreesLongitude)
 	default:
 		return
 	}
@@ -141,7 +171,7 @@ func (s *Service) handleMessage(message interface{}) {
 	msg.TGTimestamp = tgMsg.Timestamp
 	msg.TGUserName = tgMsg.UserName
 	msg.TGFwdMessageID = tgMsg.FwdMessageID
-	msg.Direction = api.DIRECTION_WA2TG
+	msg.Direction = api.DirectionWa2tg
 
 	err = db.SaveMessage(msg)
 	if err != nil {
@@ -149,36 +179,48 @@ func (s *Service) handleMessage(message interface{}) {
 	}
 }
 
-func (s *Service) HandleError(err error) {
+func (s *Instance) HandleError(err error) {
 
 	if e, ok := err.(*whatsapp.ErrConnectionFailed); ok || errors.Is(err, whatsapp.ErrInvalidWsData) {
 		log.Printf("Connection failed, underlying error: %v", e.Err)
-		log.Println("WA Waiting 30sec...")
+		log.Println("WAInstance Waiting 30sec...")
 		<-time.After(30 * time.Second)
-		log.Println("WA Reconnecting...")
+		log.Println("WAInstance Reconnecting...")
 		err = s.conn.Restore()
 		if err != nil {
-			log.Println("Restore failed WA: ", err)
+			log.Println("Restore failed WAInstance: ", err)
 		}
 	} else {
-		log.Println("error WA occoured: ", err)
+		log.Println("error WAInstance occoured: ", err)
 	}
 }
 
-func (s *Service) HandleTextMessage(message whatsapp.TextMessage) {
+func (s *Instance) HandleTextMessage(message whatsapp.TextMessage) {
 	s.handleMessage(message)
 }
 
-func (s *Service) HandleImageMessage(message whatsapp.ImageMessage) {
+func (s *Instance) HandleImageMessage(message whatsapp.ImageMessage) {
 	s.handleMessage(message)
 }
 
-func (s *Service) HandleDocumentMessage(message whatsapp.DocumentMessage) {
+func (s *Instance) HandleVideoMessage(message whatsapp.VideoMessage) {
 	s.handleMessage(message)
 }
 
-func (s *Service) HandleJsonMessage(_ string) {
+func (s *Instance) HandleAudioMessage(message whatsapp.AudioMessage) {
+	s.handleMessage(message)
 }
 
-func (s *Service) HandleContactMessage(_ whatsapp.ContactMessage) {
+func (s *Instance) HandleDocumentMessage(message whatsapp.DocumentMessage) {
+	s.handleMessage(message)
+}
+
+func (s *Instance) HandleLocationMessage(message whatsapp.LocationMessage) {
+	s.handleMessage(message)
+}
+
+func (s *Instance) HandleJsonMessage(_ string) {
+}
+
+func (s *Instance) HandleContactMessage(_ whatsapp.ContactMessage) {
 }
