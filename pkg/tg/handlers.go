@@ -169,6 +169,8 @@ func (s *Service) HandleCommand(update tgbotapi.Update) {
 		s.CommandHistory(update)
 	case "stat":
 		s.CommandStat(update)
+	case "check_client":
+		s.CommandCheckClient(update)
 	default:
 		s.BotSend(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Command '%s' not implement", update.Message.Command())))
 	}

@@ -71,6 +71,9 @@ func (s *Instance) GetShortClient(client string) string {
 func (s *Instance) GetClientName(client string) string {
 	v, ok := s.conn.Store.Contacts[s.PrepareClientJID(client)]
 	if ok {
+		if v.Name == "" {
+			return v.Short
+		}
 		return v.Name
 	} else {
 		if !pkg.StringInSlice(client, s.clients) {

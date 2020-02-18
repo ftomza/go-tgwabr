@@ -14,6 +14,78 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
+func (s *Service) CommandCheckClient(update tgbotapi.Update) {
+
+	chatID := update.Message.Chat.ID
+
+	msg := tgbotapi.NewMessage(chatID, "")
+	defer func() {
+		if msg.Text != "" {
+			s.BotSend(msg)
+		}
+	}()
+
+	if s.IsMainGroup(chatID) {
+		msg.Text = "Main group not join client"
+		return
+	}
+
+	waSvc, ok := context.FromWA(s.ctx)
+	if !ok {
+		msg.Text = "Module WhatsApp not ready"
+		return
+	}
+
+	args := update.Message.CommandArguments()
+	args = strings.ToLower(strings.TrimSpace(args))
+	argItems := strings.Split(args, " ")
+	client := ""
+	mgName := ""
+	mgChatID := chatID
+	if len(argItems) > 0 {
+		client = argItems[0]
+	}
+	if len(argItems) > 1 {
+		mgName = argItems[1]
+		db, ok := context.FromDB(s.ctx)
+		if !ok {
+			msg.Text = "Module Store not ready"
+			return
+		}
+		mg, err := db.GetMainGroupByName(mgName)
+		if err != nil {
+			msg.Text = fmt.Sprintf("Fail get MainGroup '%s', please send admin this error: %s", mgName, err)
+			log.Println("Error get mainGroup store: ", err)
+			return
+		}
+		if mg == nil {
+			msg.Text = fmt.Sprintf("Fail, MainGroup '%s' not found", mgName)
+			return
+		}
+		if !s.IsMemberMainGroup(update.Message.From.ID, mg.TGChatID) {
+			msg.Text = fmt.Sprintf("Access denied! You are not MainGroup '%s' member", mgName)
+			return
+		}
+		mgChatID = mg.TGChatID
+	} else if !s.IsMainGroup(chatID) {
+		msg.Text = fmt.Sprintf("Fail, You are part of severall MainGroups, please specify the one. Example: /check_client tel group")
+		return
+	}
+
+	wac, ok := waSvc.GetInstance(mgChatID)
+	if !ok {
+		msg.Text = "Instance WhatsApp not ready"
+		return
+	}
+
+	if !wac.ClientExist(client) {
+		msg.Text = fmt.Sprintf("Client '%s' not found", client)
+		return
+	}
+
+	msg.Text = fmt.Sprintf("Client: %s, JID: %s, name: %s", client, wac.PrepareClientJID(client), wac.GetClientName(client))
+}
+
 func (s *Service) CommandStat(update tgbotapi.Update) {
 	chatID := update.Message.Chat.ID
 	var err error
