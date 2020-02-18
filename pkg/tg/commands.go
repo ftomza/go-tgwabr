@@ -96,7 +96,7 @@ func (s *Service) CommandStat(update tgbotapi.Update) {
 		}
 	}()
 
-	if !s.IsMainGroup(chatID) {
+	if s.IsMainGroup(chatID) {
 		msg.Text = "Command not work in Main group"
 		return
 	}
@@ -112,7 +112,7 @@ func (s *Service) CommandStat(update tgbotapi.Update) {
 	argItems := strings.Split(args, " ")
 	dateStart := time.Now()
 	dateEnd := dateStart
-	if len(argItems) > 0 {
+	if len(argItems) > 0 && args != "" {
 		dateStart, err = time.Parse("2006-01-02", argItems[0])
 		if err != nil {
 			msg.Text = fmt.Sprintf("Fail parse start date. Please input date on format YYYY-MM-DD, please send admin this error: %s", err)
@@ -128,7 +128,40 @@ func (s *Service) CommandStat(update tgbotapi.Update) {
 		}
 	}
 
-	db.GetStatOnPeriod(chatID, "", dateStart, dateEnd)
+	items := []*api.Stat{}
+	for _, v := range s.mainGroups {
+		member, err := s.bot.GetChatMember(tgbotapi.ChatConfigWithUser{
+			ChatID: v,
+			UserID: update.Message.From.ID,
+		})
+
+		if err != nil {
+			msg.Text = fmt.Sprintf("Fail get member of main group, please send admin this error: %s", err)
+			return
+		}
+
+		userName := ""
+		if !(member.IsCreator() || member.IsAdministrator()) {
+			userName = update.Message.From.UserName
+		}
+		res, err := db.GetStatOnPeriod(v, userName, dateStart, dateEnd)
+		if err != nil {
+			msg.Text = fmt.Sprintf("Fail get Stat, please send admin this error: %s", err)
+			return
+		}
+		items = append(items, res...)
+	}
+	txt := ""
+	for _, v := range items {
+		if v == nil {
+			continue
+		}
+		txt = fmt.Sprintf("%s\n%s;%s;%s;%d", txt, v.Date.Format("2006-01-02"), v.TGUserName, v.WAName, v.Count)
+	}
+	if txt == "" {
+		txt = "Stat not found from period"
+	}
+	msg.Text = txt
 }
 
 func (s *Service) CommandSet(update tgbotapi.Update) {
@@ -257,8 +290,13 @@ func (s *Service) CommandHistory(update tgbotapi.Update) {
 		msg.Text = fmt.Sprintf("Chat not joined!")
 		return
 	}
-
-	wac, ok := waSvc.GetInstance(items[0].TGChatID)
+	mgChatID, err := strconv.ParseInt(items[0].MGID, 10, 64)
+	if err != nil {
+		msg.Text = fmt.Sprintf("Fail get History, please send admin this error: %s", err)
+		log.Println("Error parse MGID: ", err)
+		return
+	}
+	wac, ok := waSvc.GetInstance(mgChatID)
 	if !ok {
 		msg.Text = "Instance WhatsApp not ready"
 		return
@@ -274,16 +312,12 @@ func (s *Service) CommandHistory(update tgbotapi.Update) {
 		size = 10
 	}
 
-	messages, err := wac.GetHistory(client, size)
+	err = wac.GetHistory(client, size)
 	if err != nil {
 		msg.Text = fmt.Sprintf("Fail get History chat for '%s(%s)', please send admin this error: %s", name, client, err)
 		log.Println("Error get History: ", err)
 	}
 
-	for _, v := range messages {
-		msg.Text = v
-		s.BotSend(msg)
-	}
 	msg.Text = ""
 }
 

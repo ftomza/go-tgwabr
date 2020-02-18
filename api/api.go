@@ -61,7 +61,7 @@ type MainGroup struct {
 type Stat struct {
 	Date       time.Time
 	TGUserName string
-	WAClient   string
+	WAName     string
 	Count      int
 }
 
@@ -81,7 +81,7 @@ type WAInstance interface {
 	SendAudio(client string, reader io.Reader, mime string, QuotedID string, Quoted string) (msg *WAMessage, err error)
 	SendVideo(client string, reader io.Reader, mime string, QuotedID string, Quoted string) (msg *WAMessage, err error)
 	SendLocation(client string, lat, lon float64, QuotedID string, Quoted string) (msg *WAMessage, err error)
-	GetHistory(client string, size int) (result []string, err error)
+	GetHistory(client string, size int) (err error)
 	GetContactPhoto(client string) (result string, err error)
 	GetShortClient(client string) string
 	PrepareClientJID(client string) string

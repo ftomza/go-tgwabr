@@ -147,8 +147,18 @@ func (s *Store) GetMessagesNotChattedByClient(client string) (msg []*api.Message
 	return items.ToAPIMessages(), nil
 }
 
-func (s *Store) GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) ([]*api.Stat, error) {
-	return nil, nil
+func (s *Store) GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) (res []*api.Stat, err error) {
+	res = []*api.Stat{}
+	q := s.db.Table("messages").Select("created_at `date`, tg_user_name, wa_name, count(id) `count`").
+		Where("mg_id = ? and created_at between date(?) and date(?, '+1 days')", mgChatID, start, end)
+	if userName != "" {
+		q = q.Where("tg_user_name = ?", userName)
+	}
+	q = q.Group("date(created_at), tg_user_name, wa_name")
+
+	err = q.Scan(&res).Error
+
+	return res, err
 }
 
 func (s *Store) DeleteChat(chat *api.Chat) (bool, error) {

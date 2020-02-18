@@ -303,25 +303,24 @@ func (s *Instance) SendLocation(client string, lat, lon float64, QuotedID string
 }
 
 type historyHandler struct {
-	s        *Instance
-	messages []string
+	s *Instance
 }
 
 func (h *historyHandler) ShouldCallSynchronously() bool {
-	return true
+	return false
 }
 
 func (h *historyHandler) HandleError(err error) {
-	h.messages = append(h.messages, fmt.Sprintf("Fail get History chat, please send admin this error: %s", err))
+	h.s.HandleError(err)
 }
 
-func (h *historyHandler) HandleTextMessage(message whatsapp.TextMessage) {
+func (h *historyHandler) prepareText(message whatsapp.MessageInfo) string {
 	screenName := "-"
-	if message.Info.FromMe {
+	if message.FromMe {
 		db, ok := appCtx.FromDB(h.s.ctx)
 		screenName = "Me"
 		if ok {
-			mID := message.Info.Id
+			mID := message.Id
 			item, err := db.GetMessageByWA(mID)
 			if err == nil && item != nil && item.TGUserName != "" {
 				screenName = "@" + item.TGUserName
@@ -331,21 +330,48 @@ func (h *historyHandler) HandleTextMessage(message whatsapp.TextMessage) {
 		screenName = "Client"
 	}
 
-	date := time.Unix(int64(message.Info.Timestamp), 0)
-	h.messages = append(h.messages, fmt.Sprintf("%s %s: %s", date,
-		screenName, message.Text))
+	date := time.Unix(int64(message.Timestamp), 0)
+	return fmt.Sprintf("%s %s:", date, screenName)
 }
 
-func (s *Instance) GetHistory(client string, size int) (result []string, err error) {
+func (h *historyHandler) HandleTextMessage(message whatsapp.TextMessage) {
+
+	message.Text = fmt.Sprintf("%s %s", h.prepareText(message.Info), message.Text)
+	h.s.handleMessage(message, false)
+}
+
+func (h *historyHandler) HandleImageMessage(message whatsapp.ImageMessage) {
+	message.Caption = fmt.Sprintf("%s %s", h.prepareText(message.Info), message.Caption)
+	h.s.handleMessage(message, false)
+}
+
+func (h *historyHandler) HandleVideoMessage(message whatsapp.VideoMessage) {
+	message.Caption = fmt.Sprintf("%s %s", h.prepareText(message.Info), message.Caption)
+	h.s.handleMessage(message, false)
+}
+
+func (h *historyHandler) HandleAudioMessage(message whatsapp.AudioMessage) {
+	h.s.handleMessage(message, false)
+}
+
+func (h *historyHandler) HandleDocumentMessage(message whatsapp.DocumentMessage) {
+	h.s.handleMessage(message, false)
+}
+
+func (h *historyHandler) HandleLocationMessage(message whatsapp.LocationMessage) {
+	h.s.handleMessage(message, false)
+}
+
+func (s *Instance) GetHistory(client string, size int) (err error) {
 	client = s.PrepareClientJID(client)
 	handler := &historyHandler{s: s}
 
 	// load chat history and pass messages to the history handler to accumulate
 	err = s.conn.LoadChatMessages(client, size, "", false, false, handler)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return handler.messages, nil
+	return nil
 }
 
 func (s *Instance) GetContactPhoto(client string) (result string, err error) {

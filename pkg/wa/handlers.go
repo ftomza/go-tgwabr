@@ -15,7 +15,7 @@ import (
 	"github.com/Rhymen/go-whatsapp"
 )
 
-func (s *Instance) handleMessage(message interface{}) {
+func (s *Instance) handleMessage(message interface{}, doSave bool) {
 	msg := &api.Message{}
 	var info whatsapp.MessageInfo
 	switch m := message.(type) {
@@ -48,7 +48,7 @@ func (s *Instance) handleMessage(message interface{}) {
 		return
 	}
 
-	if info.Timestamp < s.pointTime {
+	if info.Timestamp < s.pointTime && doSave {
 		return
 	}
 
@@ -83,13 +83,15 @@ func (s *Instance) handleMessage(message interface{}) {
 		return
 	}
 
-	if db.ExistMessageByWA(msg.WAMessageID) {
-		return
-	}
+	if doSave {
+		if db.ExistMessageByWA(msg.WAMessageID) {
+			return
+		}
 
-	err := db.SaveMessage(msg)
-	if err != nil {
-		log.Println("Save store error: ", err)
+		err := db.SaveMessage(msg)
+		if err != nil {
+			log.Println("Save store error: ", err)
+		}
 	}
 
 	tg, ok := appCtx.FromTG(s.ctx)
@@ -173,9 +175,11 @@ func (s *Instance) handleMessage(message interface{}) {
 	msg.TGFwdMessageID = tgMsg.FwdMessageID
 	msg.Direction = api.DirectionWa2tg
 
-	err = db.SaveMessage(msg)
-	if err != nil {
-		log.Println("Save store error: ", err)
+	if doSave {
+		err = db.SaveMessage(msg)
+		if err != nil {
+			log.Println("Save store error: ", err)
+		}
 	}
 }
 
@@ -196,27 +200,27 @@ func (s *Instance) HandleError(err error) {
 }
 
 func (s *Instance) HandleTextMessage(message whatsapp.TextMessage) {
-	s.handleMessage(message)
+	s.handleMessage(message, true)
 }
 
 func (s *Instance) HandleImageMessage(message whatsapp.ImageMessage) {
-	s.handleMessage(message)
+	s.handleMessage(message, true)
 }
 
 func (s *Instance) HandleVideoMessage(message whatsapp.VideoMessage) {
-	s.handleMessage(message)
+	s.handleMessage(message, true)
 }
 
 func (s *Instance) HandleAudioMessage(message whatsapp.AudioMessage) {
-	s.handleMessage(message)
+	s.handleMessage(message, true)
 }
 
 func (s *Instance) HandleDocumentMessage(message whatsapp.DocumentMessage) {
-	s.handleMessage(message)
+	s.handleMessage(message, true)
 }
 
 func (s *Instance) HandleLocationMessage(message whatsapp.LocationMessage) {
-	s.handleMessage(message)
+	s.handleMessage(message, true)
 }
 
 func (s *Instance) HandleJsonMessage(_ string) {
