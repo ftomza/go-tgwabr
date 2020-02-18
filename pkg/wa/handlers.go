@@ -113,7 +113,7 @@ func (s *Instance) handleMessage(message interface{}) {
 	switch m := message.(type) {
 	case whatsapp.TextMessage:
 		txt := msg.Text
-		if chatID == 0 {
+		if chat == nil {
 			builder := strings.Builder{}
 			builder.WriteString(fmt.Sprintf("Client %s(%s):\n", msg.WAName, s.GetShortClient(msg.WAClient)))
 			builder.WriteString(txt)
