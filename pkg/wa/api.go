@@ -307,7 +307,7 @@ type historyHandler struct {
 }
 
 func (h *historyHandler) ShouldCallSynchronously() bool {
-	return false
+	return true
 }
 
 func (h *historyHandler) HandleError(err error) {
@@ -335,30 +335,35 @@ func (h *historyHandler) prepareText(message whatsapp.MessageInfo) string {
 }
 
 func (h *historyHandler) HandleTextMessage(message whatsapp.TextMessage) {
-
+	log.Println("ht: ", message.Info)
 	message.Text = fmt.Sprintf("%s %s", h.prepareText(message.Info), message.Text)
 	h.s.handleMessage(message, false)
 }
 
 func (h *historyHandler) HandleImageMessage(message whatsapp.ImageMessage) {
+	log.Println("ht: ", message.Info)
 	message.Caption = fmt.Sprintf("%s %s", h.prepareText(message.Info), message.Caption)
 	h.s.handleMessage(message, false)
 }
 
 func (h *historyHandler) HandleVideoMessage(message whatsapp.VideoMessage) {
+	log.Println("ht: ", message.Info)
 	message.Caption = fmt.Sprintf("%s %s", h.prepareText(message.Info), message.Caption)
 	h.s.handleMessage(message, false)
 }
 
 func (h *historyHandler) HandleAudioMessage(message whatsapp.AudioMessage) {
+	log.Println("ht: ", message.Info)
 	h.s.handleMessage(message, false)
 }
 
 func (h *historyHandler) HandleDocumentMessage(message whatsapp.DocumentMessage) {
+	log.Println("ht: ", message.Info)
 	h.s.handleMessage(message, false)
 }
 
 func (h *historyHandler) HandleLocationMessage(message whatsapp.LocationMessage) {
+	log.Println("ht: ", message.Info)
 	h.s.handleMessage(message, false)
 }
 

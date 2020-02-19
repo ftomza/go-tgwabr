@@ -175,3 +175,10 @@ func (s *Store) DeleteChat(chat *api.Chat) (bool, error) {
 	}
 	return true, nil
 }
+
+func (s *Store) GetNotChatted(mgID int64) (res []*api.StatDay, err error) {
+	res = []*api.StatDay{}
+	err = s.db.Table("messages").Select("created_at `date`, wa_client, count(id) `count`").
+		Where("chatted = 'no' and mg_id = ?", mgID).Group("wa_client").Scan(&res).Error
+	return
+}

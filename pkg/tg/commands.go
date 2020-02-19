@@ -575,6 +575,7 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 	}
 
 	msg.Text = fmt.Sprintf("Join '%s(%s)' OK", name, client)
+	s.UpdateStatMessage()
 }
 
 func (s *Service) CommandLeave(update tgbotapi.Update) {

@@ -14,8 +14,9 @@ import (
 type MainGroup struct {
 	gorm.Model
 
-	TGChatID int64  `gorm:"index"`
-	Name     string `gorm:"index"`
+	TGChatID   int64  `gorm:"index"`
+	Name       string `gorm:"index"`
+	MessagePin int
 }
 
 type Chat struct {

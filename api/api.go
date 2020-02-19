@@ -54,8 +54,9 @@ type Chat struct {
 }
 
 type MainGroup struct {
-	TGChatID int64
-	Name     string
+	TGChatID   int64
+	Name       string
+	MessagePin int
 }
 
 type Stat struct {
@@ -63,6 +64,12 @@ type Stat struct {
 	TGUserName string
 	WAName     string
 	Count      int
+}
+
+type StatDay struct {
+	Date     time.Time
+	WAClient string
+	Count    int
 }
 
 type WA interface {
@@ -97,6 +104,7 @@ type TG interface {
 	SendDocument(chatID int64, reader io.Reader, fileName string) (msg *TGMessage, err error)
 	SendLocation(chatID int64, lat, lon float64) (msg *TGMessage, err error)
 	DeleteMessage(chatID int64, messageID int) (err error)
+	UpdateStatMessage()
 }
 
 type Store interface {
@@ -113,6 +121,7 @@ type Store interface {
 	SaveChat(chat *Chat) error
 	GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) ([]*Stat, error)
 	DeleteChat(chat *Chat) (bool, error)
+	GetNotChatted(mgID int64) ([]*StatDay, error)
 }
 
 type Cache interface {

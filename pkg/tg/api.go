@@ -1,9 +1,12 @@
 package tg
 
 import (
+	"fmt"
 	"io"
 	"log"
+	"strings"
 	"tgwabr/api"
+	appCtx "tgwabr/context"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/skip2/go-qrcode"
@@ -110,4 +113,77 @@ func (s *Service) DeleteMessage(chatID int64, messageID int) (err error) {
 
 func (s *Service) GetMembers() (members []int, err error) {
 	return []int{}, nil
+}
+
+func (s *Service) UpdateStatMessage() {
+
+	db, ok := appCtx.FromDB(s.ctx)
+	if !ok {
+		log.Println("Error context db updateStatMessage")
+		return
+	}
+
+	for _, v := range s.mainGroups {
+		items, err := db.GetNotChatted(v)
+		if err != nil {
+			log.Println("Error get items updateStatMessage: ", err)
+			return
+		}
+
+		txt := ""
+		for _, v := range items {
+			if v == nil {
+				continue
+			}
+			if strings.Contains(v.WAClient, "@c.us") || strings.Contains(v.WAClient, "@g.us") {
+				continue
+			}
+			client := strings.ReplaceAll(v.WAClient, "@s.whatsapp.net", "")
+			txt = fmt.Sprintf("%s\n - %s from %s: %d", txt, client, v.Date.Format("2006-01-02"), v.Count)
+		}
+
+		grp, err := db.GetMainGroupByTGID(v)
+		if err != nil {
+			log.Println("Error get MainGroup updateStatMessage: ", err)
+			return
+		}
+
+		if grp.MessagePin > 0 && txt != "" {
+			msg := tgbotapi.NewEditMessageText(v, grp.MessagePin, txt)
+			_, err = s.bot.Send(msg)
+			if err != nil && strings.Contains(err.Error(), "Bad Request: message to edit not found") {
+				grp.MessagePin = -1
+			}
+		} else if grp.MessagePin > 0 && txt == "" {
+			_, err = s.bot.UnpinChatMessage(tgbotapi.UnpinChatMessageConfig{ChatID: v})
+			if err == nil {
+				_, err = s.bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
+					ChatID:    v,
+					MessageID: grp.MessagePin,
+				})
+			}
+			if err == nil {
+				grp.MessagePin = -1
+				err = db.SaveMainGroup(grp)
+			}
+			if err != nil {
+				log.Printf("Error delete MSG %d on %d updateStatMessage: %s\n", grp.MessagePin, v, err)
+			}
+		}
+		if grp.MessagePin < 1 && txt != "" {
+			msg := tgbotapi.NewMessage(v, txt)
+			resp, err := s.bot.Send(msg)
+			if err == nil {
+				grp.MessagePin = resp.MessageID
+				err = db.SaveMainGroup(grp)
+			}
+			if err == nil {
+				_, err = s.bot.PinChatMessage(tgbotapi.PinChatMessageConfig{ChatID: v, MessageID: resp.MessageID, DisableNotification: true})
+			}
+			if err != nil {
+				log.Printf("Error Send MSG on %d updateStatMessage: %s\n", v, err)
+			}
+		}
+	}
+
 }
