@@ -178,7 +178,26 @@ func (s *Store) DeleteChat(chat *api.Chat) (bool, error) {
 
 func (s *Store) GetNotChatted(mgID int64) (res []*api.StatDay, err error) {
 	res = []*api.StatDay{}
-	err = s.db.Table("messages").Select("created_at `date`, wa_client, count(id) `count`").
-		Where("chatted = 'no' and mg_id = ?", mgID).Group("wa_client").Scan(&res).Error
+	err = s.db.Raw(`
+	select
+		messages.created_at "date",
+		t0.wa_client,
+		messages.tg_user_name,
+		t0.cnt "count"
+	from
+	(select
+		   max(created_at) at,
+		   wa_client,
+		   count(wa_message_id) cnt
+	from
+		 messages
+	where
+		  chatted='no'
+			and mg_id = ?
+	group by wa_client, tg_user_name, tg_user_name) t0
+	inner join messages
+		on t0.wa_client = messages.wa_client
+			and t0.at = messages.created_at
+	`, mgID).Scan(&res).Error
 	return
 }

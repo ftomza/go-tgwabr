@@ -122,24 +122,36 @@ func (s *Service) UpdateStatMessage() {
 		log.Println("Error context db updateStatMessage")
 		return
 	}
-
+	waSvc, ok := appCtx.FromWA(s.ctx)
+	if !ok {
+		log.Println("Module WhatsApp not ready")
+		return
+	}
 	for _, v := range s.mainGroups {
 		items, err := db.GetNotChatted(v)
 		if err != nil {
 			log.Println("Error get items updateStatMessage: ", err)
 			return
 		}
-
+		wac, ok := waSvc.GetInstance(v)
+		if !ok {
+			log.Println("Instance WhatsApp not ready")
+			continue
+		}
 		txt := ""
-		for _, v := range items {
-			if v == nil {
+		for _, i := range items {
+			if i == nil {
 				continue
 			}
-			if strings.Contains(v.WAClient, "@c.us") || strings.Contains(v.WAClient, "@g.us") {
+
+			if strings.Contains(i.WAClient, "@c.us") || strings.Contains(i.WAClient, "@g.us") {
 				continue
 			}
-			client := strings.ReplaceAll(v.WAClient, "@s.whatsapp.net", "")
-			txt = fmt.Sprintf("%s\n - %s from %s: %d", txt, client, v.Date.Format("2006-01-02"), v.Count)
+			name := wac.GetClientName(i.WAClient)
+			client := wac.GetShortClient(i.WAClient)
+
+			//txt = fmt.Sprintf("%s\n <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%d</td></tr>", txt, name, client, i.TGUserName, i.Date.Format("2006-01-02"), i.Count)
+			txt = fmt.Sprintf("%s\n - %s(%s) from [%s]>%s: %d", txt, name, client, i.TGUserName, i.Date.Format("2006-01-02"), i.Count)
 		}
 
 		grp, err := db.GetMainGroupByTGID(v)

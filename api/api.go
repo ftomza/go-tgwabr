@@ -67,9 +67,10 @@ type Stat struct {
 }
 
 type StatDay struct {
-	Date     time.Time
-	WAClient string
-	Count    int
+	Date       time.Time
+	WAClient   string
+	TGUserName string
+	Count      int
 }
 
 type WA interface {
