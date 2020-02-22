@@ -176,28 +176,32 @@ func (s *Store) DeleteChat(chat *api.Chat) (bool, error) {
 	return true, nil
 }
 
-func (s *Store) GetNotChatted(mgID int64) (res []*api.StatDay, err error) {
+func (s *Store) GetNotChatted(mgID int64, botName string) (res []*api.StatDay, err error) {
 	res = []*api.StatDay{}
 	err = s.db.Raw(`
-	select
-		messages.created_at "date",
-		t0.wa_client,
-		messages.tg_user_name,
-		t0.cnt "count"
-	from
-	(select
-		   max(created_at) at,
-		   wa_client,
-		   count(wa_message_id) cnt
-	from
-		 messages
-	where
-		  chatted='no'
+	select messages.created_at "date",
+       t0.wa_client,
+       (select tg_user_name
+        from messages
+        where chatted = 'yes'
+          and mg_id = t0.mg_id
+          and wa_client = t0.wa_client
+          and tg_user_name != ?
+        order by created_at DESC
+        limit 1)           tg_user_name,
+       t0.cnt              "count"
+	from (select max(created_at)      at,
+				 wa_client,
+				 count(wa_message_id) cnt,
+				 mg_id
+		  from messages
+		  where chatted = 'no'
 			and mg_id = ?
-	group by wa_client, tg_user_name, tg_user_name) t0
-	inner join messages
-		on t0.wa_client = messages.wa_client
-			and t0.at = messages.created_at
-	`, mgID).Scan(&res).Error
+		  group by wa_client, tg_user_name, tg_user_name, mg_id) t0
+			 inner join messages
+						on t0.wa_client = messages.wa_client
+							and t0.at = messages.created_at
+							and t0.mg_id = messages.mg_id;
+	`, botName, mgID).Scan(&res).Error
 	return
 }

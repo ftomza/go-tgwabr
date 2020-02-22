@@ -128,7 +128,7 @@ func (s *Service) UpdateStatMessage() {
 		return
 	}
 	for _, v := range s.mainGroups {
-		items, err := db.GetNotChatted(v)
+		items, err := db.GetNotChatted(v, s.bot.Self.UserName)
 		if err != nil {
 			log.Println("Error get items updateStatMessage: ", err)
 			return

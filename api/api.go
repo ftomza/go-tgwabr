@@ -122,7 +122,7 @@ type Store interface {
 	SaveChat(chat *Chat) error
 	GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) ([]*Stat, error)
 	DeleteChat(chat *Chat) (bool, error)
-	GetNotChatted(mgID int64) ([]*StatDay, error)
+	GetNotChatted(mgID int64, botName string) ([]*StatDay, error)
 }
 
 type Cache interface {
