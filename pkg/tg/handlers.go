@@ -33,7 +33,7 @@ func (s *Service) HandleTextMessage(update tgbotapi.Update) {
 	}
 
 	if update.Message.Document != nil {
-		item.Text = fmt.Sprintf("%s", update.Message.Document.FileName)
+		item.Text = update.Message.Document.FileName
 	} else if update.Message.Photo != nil && len(*update.Message.Photo) > 0 {
 		item.Text = "PHOTO"
 	} else if update.Message.Audio != nil {
@@ -86,7 +86,7 @@ func (s *Service) HandleTextMessage(update tgbotapi.Update) {
 	}
 
 	chat := chats[0]
-	mgChatID, err := strconv.ParseInt(chat.MGID, 10, 64)
+	mgChatID, _ := strconv.ParseInt(chat.MGID, 10, 64)
 	wac, ok := waSvc.GetInstance(mgChatID)
 	if !ok {
 		msg.Text = "Instance WhatsApp not ready"
@@ -94,13 +94,14 @@ func (s *Service) HandleTextMessage(update tgbotapi.Update) {
 	}
 
 	var resp *api.WAMessage
+	var respFile *http.Response
 	if update.Message.Audio != nil {
-		err, respFile := s.getFileResponse(err, update.Message.Audio.FileID)
+		err, respFile = s.getFileResponse(update.Message.Audio.FileID)
 		if err == nil {
 			resp, err = wac.SendAudio(chat.WAClient, respFile.Body, update.Message.Audio.MimeType, "", "")
 		}
 	} else if update.Message.Video != nil {
-		err, respFile := s.getFileResponse(err, update.Message.Video.FileID)
+		err, respFile = s.getFileResponse(update.Message.Video.FileID)
 		if err == nil {
 			resp, err = wac.SendAudio(chat.WAClient, respFile.Body, update.Message.Video.MimeType, "", "")
 		}
@@ -108,12 +109,12 @@ func (s *Service) HandleTextMessage(update tgbotapi.Update) {
 		resp, err = wac.SendLocation(chat.WAClient, update.Message.Location.Latitude, update.Message.Location.Longitude, "", "")
 	} else if update.Message.Photo != nil && len(*update.Message.Photo) > 0 {
 		v := (*update.Message.Photo)[len(*update.Message.Photo)-1]
-		err, respFile := s.getFileResponse(err, v.FileID)
+		err, respFile = s.getFileResponse(v.FileID)
 		if err == nil {
 			resp, err = wac.SendImage(chat.WAClient, respFile.Body, "image/jpeg", "", "")
 		}
 	} else if update.Message.Document != nil {
-		err, respFile := s.getFileResponse(err, update.Message.Document.FileID)
+		err, respFile = s.getFileResponse(update.Message.Document.FileID)
 		if err == nil {
 			resp, err = wac.SendDocument(chat.WAClient, respFile.Body, update.Message.Document.MimeType, update.Message.Document.FileName, "", "")
 		}
@@ -141,10 +142,9 @@ func (s *Service) HandleTextMessage(update tgbotapi.Update) {
 	}
 }
 
-func (s *Service) getFileResponse(err error, fileID string) (error, *http.Response) {
+func (s *Service) getFileResponse(fileID string) (err error, respFile *http.Response) {
 	var urlFile string
 	urlFile, err = s.bot.GetFileDirectURL(fileID)
-	var respFile *http.Response
 	if err == nil {
 		respFile, err = http.Get(urlFile)
 	}
@@ -171,6 +171,8 @@ func (s *Service) HandleCommand(update tgbotapi.Update) {
 		s.CommandStat(update)
 	case "check_client":
 		s.CommandCheckClient(update)
+	case "alias":
+		s.CommandAlias(update)
 	default:
 		s.BotSend(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Command '%s' not implement", update.Message.Command())))
 	}

@@ -73,6 +73,12 @@ type StatDay struct {
 	Count      int
 }
 
+type Alias struct {
+	MGID     string
+	WAClient string
+	Name     string
+}
+
 type WA interface {
 	GetInstance(id int64) (WAInstance, bool)
 }
@@ -120,9 +126,11 @@ type Store interface {
 	GetChatByClient(client string, id string) (*Chat, error)
 	GetChatsByChatID(chatID int64) ([]*Chat, error)
 	SaveChat(chat *Chat) error
-	GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) ([]*Stat, error)
+	GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) (apiItems []*Stat, err error)
 	DeleteChat(chat *Chat) (bool, error)
-	GetNotChatted(mgID int64, botName string) ([]*StatDay, error)
+	GetNotChatted(mgID int64, botName string) (apiItems []*StatDay, err error)
+	SaveAlias(alias *Alias) (err error)
+	GetAliasesByName(name string) (apiItems []*Alias, err error)
 }
 
 type Cache interface {

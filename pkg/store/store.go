@@ -46,6 +46,14 @@ type Message struct {
 	Text           string
 }
 
+type Alias struct {
+	gorm.Model
+
+	MGID     string
+	WAClient string `gorm:"index"`
+	Name     string `gorm:"index"`
+}
+
 type APIMessage api.Message
 
 func (a APIMessage) ToMessage() *Message {
@@ -118,6 +126,30 @@ func (a MainGroups) ToAPIMainGroups() []*api.MainGroup {
 	return list
 }
 
+type APIAlias api.Alias
+
+func (a APIAlias) ToAlias() *Alias {
+	item := &Alias{}
+	pkg.MustCopyValue(item, &a)
+	return item
+}
+
+func (a Alias) ToAPIAlias() *api.Alias {
+	item := &api.Alias{}
+	pkg.MustCopyValue(item, &a)
+	return item
+}
+
+type Aliases []*Alias
+
+func (a Aliases) ToAPIAliases() []*api.Alias {
+	list := make([]*api.Alias, len(a))
+	for i, item := range a {
+		list[i] = item.ToAPIAlias()
+	}
+	return list
+}
+
 type Store struct {
 	ctx context.Context
 	db  *gorm.DB
@@ -142,6 +174,7 @@ func New(ctx context.Context) (store *Store, err error) {
 	store.db.AutoMigrate(&Chat{})
 	store.db.AutoMigrate(&Message{})
 	store.db.AutoMigrate(&MainGroup{})
+	store.db.AutoMigrate(&Alias{})
 
 	return
 }

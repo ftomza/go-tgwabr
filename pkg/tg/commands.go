@@ -5,20 +5,21 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"tgwabr/api"
 	"tgwabr/context"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgBotApi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-func (s *Service) CommandCheckClient(update tgbotapi.Update) {
+func (s *Service) CommandCheckClient(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID
 
-	msg := tgbotapi.NewMessage(chatID, "")
+	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
 			s.BotSend(msg)
@@ -26,7 +27,7 @@ func (s *Service) CommandCheckClient(update tgbotapi.Update) {
 	}()
 
 	if s.IsMainGroup(chatID) {
-		msg.Text = "Main group not join client"
+		msg.Text = "Main group not check client"
 		return
 	}
 
@@ -36,60 +37,48 @@ func (s *Service) CommandCheckClient(update tgbotapi.Update) {
 		return
 	}
 
+	db, ok := context.FromDB(s.ctx)
+	if !ok {
+		msg.Text = "Module Store not ready"
+		return
+	}
+
 	args := update.Message.CommandArguments()
 	args = strings.ToLower(strings.TrimSpace(args))
-	argItems := strings.Split(args, " ")
-	client := ""
-	mgName := ""
-	mgChatID := chatID
-	if len(argItems) > 0 {
-		client = argItems[0]
-	}
-	if len(argItems) > 1 {
-		mgName = argItems[1]
-		db, ok := context.FromDB(s.ctx)
+	client, mgName := s.prepareArgs(args)
+	txt := fmt.Sprintf("Check client: %s", client)
+	isFound := false
+	for _, v := range s.mainGroups {
+
+		wac, ok := waSvc.GetInstance(v)
 		if !ok {
-			msg.Text = "Module Store not ready"
+			msg.Text = "Instance WhatsApp not ready"
 			return
 		}
-		mg, err := db.GetMainGroupByName(mgName)
-		if err != nil {
-			msg.Text = fmt.Sprintf("Fail get MainGroup '%s', please send admin this error: %s", mgName, err)
-			log.Println("Error get mainGroup store: ", err)
-			return
+
+		if !wac.ClientExist(client) {
+			continue
 		}
-		if mg == nil {
-			msg.Text = fmt.Sprintf("Fail, MainGroup '%s' not found", mgName)
-			return
+		isFound = true
+
+		mg, _ := db.GetMainGroupByTGID(v)
+		mgName = "-"
+		if mg != nil {
+			mgName = mg.Name
 		}
-		if !s.IsMemberMainGroup(update.Message.From.ID, mg.TGChatID) {
-			msg.Text = fmt.Sprintf("Access denied! You are not MainGroup '%s' member", mgName)
-			return
-		}
-		mgChatID = mg.TGChatID
-	} else if !s.IsMainGroup(chatID) {
-		msg.Text = fmt.Sprintf("Fail, You are part of severall MainGroups, please specify the one. Example: /check_client tel group")
-		return
+		txt = fmt.Sprintf("%s\n - %s, JID: %s, name: %s, mg: %s", txt, client, wac.PrepareClientJID(client), wac.GetClientName(client), mgName)
+	}
+	if !isFound {
+		txt = txt + " not found"
 	}
 
-	wac, ok := waSvc.GetInstance(mgChatID)
-	if !ok {
-		msg.Text = "Instance WhatsApp not ready"
-		return
-	}
-
-	if !wac.ClientExist(client) {
-		msg.Text = fmt.Sprintf("Client '%s' not found", client)
-		return
-	}
-
-	msg.Text = fmt.Sprintf("Client: %s, JID: %s, name: %s", client, wac.PrepareClientJID(client), wac.GetClientName(client))
+	msg.Text = txt
 }
 
-func (s *Service) CommandStat(update tgbotapi.Update) {
+func (s *Service) CommandStat(update tgBotApi.Update) {
 	chatID := update.Message.Chat.ID
 	var err error
-	msg := tgbotapi.NewMessage(chatID, "")
+	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
 			s.BotSend(msg)
@@ -130,7 +119,7 @@ func (s *Service) CommandStat(update tgbotapi.Update) {
 
 	items := []*api.Stat{}
 	for _, v := range s.mainGroups {
-		member, err := s.bot.GetChatMember(tgbotapi.ChatConfigWithUser{
+		member, err := s.bot.GetChatMember(tgBotApi.ChatConfigWithUser{
 			ChatID: v,
 			UserID: update.Message.From.ID,
 		})
@@ -164,11 +153,11 @@ func (s *Service) CommandStat(update tgbotapi.Update) {
 	msg.Text = txt
 }
 
-func (s *Service) CommandSet(update tgbotapi.Update) {
+func (s *Service) CommandSet(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID
 
-	msg := tgbotapi.NewMessage(chatID, "")
+	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
 			s.BotSend(msg)
@@ -186,7 +175,7 @@ func (s *Service) CommandSet(update tgbotapi.Update) {
 		return
 	}
 
-	member, err := s.bot.GetChatMember(tgbotapi.ChatConfigWithUser{
+	member, err := s.bot.GetChatMember(tgBotApi.ChatConfigWithUser{
 		ChatID: chatID,
 		UserID: update.Message.From.ID,
 	})
@@ -221,11 +210,11 @@ func (s *Service) CommandSet(update tgbotapi.Update) {
 	msg.Text = "MainGroup Set: OK"
 }
 
-func (s *Service) CommandStatus(update tgbotapi.Update) {
+func (s *Service) CommandStatus(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID
 
-	msg := tgbotapi.NewMessage(chatID, "")
+	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
 			s.BotSend(msg)
@@ -256,11 +245,11 @@ func (s *Service) CommandStatus(update tgbotapi.Update) {
 	}
 }
 
-func (s *Service) CommandHistory(update tgbotapi.Update) {
+func (s *Service) CommandHistory(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID
 
-	msg := tgbotapi.NewMessage(chatID, "")
+	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
 			s.BotSend(msg)
@@ -321,11 +310,11 @@ func (s *Service) CommandHistory(update tgbotapi.Update) {
 	msg.Text = ""
 }
 
-func (s *Service) CommandLogin(update tgbotapi.Update) {
+func (s *Service) CommandLogin(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID
 
-	msg := tgbotapi.NewMessage(chatID, "")
+	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
 			s.BotSend(msg)
@@ -359,11 +348,79 @@ func (s *Service) CommandLogin(update tgbotapi.Update) {
 	}
 }
 
-func (s *Service) CommandLogout(update tgbotapi.Update) {
+func (s *Service) CommandAlias(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID
 
-	msg := tgbotapi.NewMessage(chatID, "")
+	msg := tgBotApi.NewMessage(chatID, "")
+	defer func() {
+		if msg.Text != "" {
+			s.BotSend(msg)
+		}
+	}()
+
+	if !s.IsMainGroup(chatID) {
+		msg.Text = "Command work only 'Main group'"
+		return
+	}
+
+	waSvc, ok := context.FromWA(s.ctx)
+	if !ok {
+		msg.Text = "Module WhatsApp not ready"
+		return
+	}
+
+	wac, ok := waSvc.GetInstance(chatID)
+	if !ok {
+		msg.Text = "Instance WhatsApp not ready"
+		return
+	}
+
+	db, ok := context.FromDB(s.ctx)
+	if !ok {
+		msg.Text = "Module Store not ready"
+		return
+	}
+
+	args := update.Message.CommandArguments()
+	args = strings.ToLower(strings.TrimSpace(args))
+
+	client, aliasName := s.prepareArgs(args)
+	if client == "" {
+		msg.Text = "Client not set"
+		return
+	}
+	if aliasName == "" {
+		msg.Text = "Alias not set"
+		return
+	}
+
+	if !wac.ClientExist(client) {
+		msg.Text = fmt.Sprintf("Client '%s' not found", client)
+		return
+	}
+
+	alias := &api.Alias{
+		MGID:     fmt.Sprintf("%d", chatID),
+		WAClient: client,
+		Name:     aliasName,
+	}
+
+	err := db.SaveAlias(alias)
+	if err != nil {
+		msg.Text = fmt.Sprintf("Fail save alias '%s' - '%s', please send admin this error: %s", client, aliasName, err)
+		log.Println("Error save chat store: ", err)
+		return
+	}
+
+	msg.Text = fmt.Sprintf("Client '%s' save as '%s'", client, aliasName)
+}
+
+func (s *Service) CommandLogout(update tgBotApi.Update) {
+
+	chatID := update.Message.Chat.ID
+
+	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
 			s.BotSend(msg)
@@ -397,11 +454,11 @@ func (s *Service) CommandLogout(update tgbotapi.Update) {
 	}
 }
 
-func (s *Service) CommandJoin(update tgbotapi.Update) {
+func (s *Service) CommandJoin(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID
 
-	msg := tgbotapi.NewMessage(chatID, "")
+	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
 			s.BotSend(msg)
@@ -427,15 +484,8 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 
 	args := update.Message.CommandArguments()
 	args = strings.ToLower(strings.TrimSpace(args))
-	argItems := strings.Split(args, " ")
-	client := ""
-	mgName := ""
-	if len(argItems) > 0 {
-		client = argItems[0]
-	}
-	if len(argItems) > 1 {
-		mgName = argItems[1]
-	}
+
+	client, mgName := s.prepareArgs(args)
 
 	if client == "" {
 		msg.Text = "Client not set"
@@ -446,8 +496,22 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 		return
 	}
 
+	aliases, err := db.GetAliasesByName(client)
+	if err != nil {
+		msg.Text = fmt.Sprintf("Fail get Alias '%s', please send admin this error: %s", client, err)
+		log.Println("Error get Alias store: ", err)
+		return
+	}
+
 	mgChatID := int64(0)
-	if mgName != "" {
+	if len(aliases) == 1 {
+		mgChatID, _ = strconv.ParseInt(aliases[0].MGID, 10, 64)
+		if !s.IsMemberMainGroup(update.Message.From.ID, mgChatID) {
+			mgChatID = 0
+		}
+	}
+
+	if mgName != "" && mgChatID == 0 {
 		mg, err := db.GetMainGroupByName(mgName)
 		if err != nil {
 			msg.Text = fmt.Sprintf("Fail get MainGroup '%s', please send admin this error: %s", mgName, err)
@@ -463,13 +527,13 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 			return
 		}
 		mgChatID = mg.TGChatID
-	} else {
+	} else if mgChatID == 0 {
 
 		isOne := true
 		for _, v := range s.mainGroups {
 			isMember := s.IsMemberMainGroup(update.Message.From.ID, v)
 			if isMember && !isOne {
-				msg.Text = fmt.Sprintf("Fail, You are part of severall MainGroups, please specify the one. Example: /join tel group")
+				msg.Text = fmt.Sprintf("Fail, You are part of severall MainGroups, please specify the one. Example: /join tel[or alias] group")
 				return
 			}
 			if isMember && isOne {
@@ -483,6 +547,15 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 	if !ok {
 		msg.Text = "Instance WhatsApp not ready"
 		return
+	}
+
+	if client != "check" && !wac.ClientExist(client) {
+
+		for _, v := range aliases {
+			if v.MGID == fmt.Sprintf("%d", mgChatID) {
+				client = v.WAClient
+			}
+		}
 	}
 
 	if client != "check" && !wac.ClientExist(client) {
@@ -518,22 +591,22 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 		return
 	}
 
-	msgJoin := tgbotapi.NewMessage(mgChatID, fmt.Sprintf("Chat %s(%s) join to @%s", name, client, update.Message.From.UserName))
+	msgJoin := tgBotApi.NewMessage(mgChatID, fmt.Sprintf("Chat %s(%s) join to @%s", name, client, update.Message.From.UserName))
 	s.BotSend(msgJoin)
 
-	_, _ = s.bot.SetChatTitle(tgbotapi.SetChatTitleConfig{
+	_, _ = s.bot.SetChatTitle(tgBotApi.SetChatTitleConfig{
 		ChatID: chat.TGChatID,
 		Title:  fmt.Sprintf("Chat with %s(%s)", name, client),
 	})
 
-	raw, err := wac.GetContactPhoto(client)
+	raw, _ := wac.GetContactPhoto(client)
 	if raw != "" {
-		resp, err := s.bot.SetChatPhoto(tgbotapi.SetChatPhotoConfig{
-			BaseFile: tgbotapi.BaseFile{
-				BaseChat: tgbotapi.BaseChat{
+		resp, err := s.bot.SetChatPhoto(tgBotApi.SetChatPhotoConfig{
+			BaseFile: tgBotApi.BaseFile{
+				BaseChat: tgBotApi.BaseChat{
 					ChatID: chat.TGChatID,
 				},
-				File: tgbotapi.FileBytes{
+				File: tgBotApi.FileBytes{
 					Bytes: getPhotoByte(raw),
 				},
 			},
@@ -553,7 +626,7 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 
 	for _, v := range messages {
 
-		msgTransfer := tgbotapi.NewMessage(chatID, v.Text)
+		msgTransfer := tgBotApi.NewMessage(chatID, v.Text)
 		resp := s.BotSend(msgTransfer)
 		err = s.DeleteMessage(v.TGChatID, v.TGMessageID)
 		if err != nil {
@@ -578,12 +651,12 @@ func (s *Service) CommandJoin(update tgbotapi.Update) {
 	s.UpdateStatMessage()
 }
 
-func (s *Service) CommandLeave(update tgbotapi.Update) {
+func (s *Service) CommandLeave(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID
 
 	var err error
-	msg := tgbotapi.NewMessage(chatID, "")
+	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
 			s.BotSend(msg)
@@ -601,9 +674,6 @@ func (s *Service) CommandLeave(update tgbotapi.Update) {
 		msg.Text = "Module Store not ready"
 		return
 	}
-
-	client := update.Message.CommandArguments()
-	client = strings.ToLower(strings.TrimSpace(client))
 
 	chats, err := db.GetChatsByChatID(update.Message.Chat.ID)
 	if err != nil {
@@ -625,24 +695,24 @@ func (s *Service) CommandLeave(update tgbotapi.Update) {
 			return
 		}
 		name := wac.GetClientName(v.WAClient)
-		ok, err = db.DeleteChat(v)
+		_, err = db.DeleteChat(v)
 		if err != nil {
 			msg.Text = fmt.Sprintf("Fail leave '%s(%s)' chat, please send admin this error: %s", name, v.WAClient, err)
 			log.Println("Error delete chat store: ", err)
 			return
 		}
 		txt = txt + fmt.Sprintf(" - '%s(%s)' OK\n", name, v.WAClient)
-		msgJoin := tgbotapi.NewMessage(mgChatID, fmt.Sprintf("@%s leave chat %s(%s)", update.Message.From.UserName, name, wac.GetShortClient(v.WAClient)))
+		msgJoin := tgBotApi.NewMessage(mgChatID, fmt.Sprintf("@%s leave chat %s(%s)", update.Message.From.UserName, name, wac.GetShortClient(v.WAClient)))
 		s.BotSend(msgJoin)
 	}
 	msg.Text = txt
 
-	_, _ = s.bot.SetChatTitle(tgbotapi.SetChatTitleConfig{
+	_, _ = s.bot.SetChatTitle(tgBotApi.SetChatTitleConfig{
 		ChatID: update.Message.Chat.ID,
 		Title:  fmt.Sprintf("H.W.Bot Free chat"),
 	})
 
-	_, _ = s.bot.DeleteChatPhoto(tgbotapi.DeleteChatPhotoConfig{ChatID: update.Message.Chat.ID})
+	_, _ = s.bot.DeleteChatPhoto(tgBotApi.DeleteChatPhotoConfig{ChatID: update.Message.Chat.ID})
 }
 
 func getPhotoByte(path string) []byte {
@@ -655,4 +725,66 @@ func getPhotoByte(path string) []byte {
 		log.Println(err)
 	}
 	return b
+}
+
+func (s *Service) prepareArgs(args string) (arg1, arg2 string) {
+
+	repl := func(in string) (out string) {
+		out = strings.ReplaceAll(in, "(", "")
+		out = strings.ReplaceAll(out, ")", "")
+		out = strings.ReplaceAll(out, "-", "")
+		out = strings.ReplaceAll(out, "+", "")
+		out = strings.ReplaceAll(out, " ", "")
+		return
+	}
+
+	isFind := false
+	compRegEx := regexp.MustCompile(`^([^a-zA-Z]+)$`)
+	match := compRegEx.FindStringSubmatch(args)
+	if len(match) > 1 {
+		isFind = true
+		arg1 = repl(match[1])
+	}
+
+	if isFind {
+		return
+	}
+
+	compRegEx = regexp.MustCompile(`^([^a-zA-Z]+)([A-Za-z].*)$`)
+	match = compRegEx.FindStringSubmatch(args)
+	if len(match) > 1 {
+		isFind = true
+		arg1 = repl(match[1])
+	}
+
+	if len(match) > 2 {
+		arg2 = match[2]
+	}
+
+	if isFind {
+		return
+	}
+
+	compRegEx = regexp.MustCompile(`^(\S*)$`)
+	match = compRegEx.FindStringSubmatch(args)
+	if len(match) > 1 {
+		isFind = true
+		arg1 = match[1]
+	}
+
+	if isFind {
+		return
+	}
+
+	compRegEx = regexp.MustCompile(`^(\S*)\s*(\S*)$`)
+	match = compRegEx.FindStringSubmatch(args)
+	if len(match) > 1 {
+		arg1 = match[1]
+	}
+
+	if len(match) > 2 {
+		arg2 = match[2]
+	}
+
+	return
 }

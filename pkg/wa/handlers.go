@@ -33,7 +33,7 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 		msg.WAFwdMessageID = m.ContextInfo.QuotedMessageID
 	case whatsapp.AudioMessage:
 		info = m.Info
-		msg.Text = fmt.Sprintf("%s", m.Type)
+		msg.Text = m.Type
 		msg.WAFwdMessageID = m.ContextInfo.QuotedMessageID
 	case whatsapp.VideoMessage:
 		info = m.Info
@@ -41,7 +41,7 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 		msg.WAFwdMessageID = m.ContextInfo.QuotedMessageID
 	case whatsapp.LocationMessage:
 		info = m.Info
-		msg.Text = fmt.Sprintf("%s", m.Name)
+		msg.Text = m.Name
 		msg.WAFwdMessageID = m.ContextInfo.QuotedMessageID
 	default:
 		log.Println(fmt.Sprintf("Type not implement %T", m))

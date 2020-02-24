@@ -151,7 +151,11 @@ func (s *Service) UpdateStatMessage() {
 			client := wac.GetShortClient(i.WAClient)
 
 			//txt = fmt.Sprintf("%s\n <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%d</td></tr>", txt, name, client, i.TGUserName, i.Date.Format("2006-01-02"), i.Count)
-			txt = fmt.Sprintf("%s\n - %s(%s) from [%s]>%s: %d", txt, name, client, i.TGUserName, i.Date.Format("2006-01-02"), i.Count)
+			userName := ""
+			if i.TGUserName != "" {
+				userName = "@" + i.TGUserName
+			}
+			txt = fmt.Sprintf("%s\n - %s(%s) from [%s]>%s: %d", txt, name, client, userName, i.Date.Format("2006-01-02"), i.Count)
 		}
 
 		grp, err := db.GetMainGroupByTGID(v)

@@ -315,7 +315,7 @@ func (h *historyHandler) HandleError(err error) {
 }
 
 func (h *historyHandler) prepareText(message whatsapp.MessageInfo) string {
-	screenName := "-"
+	var screenName string
 	if message.FromMe {
 		db, ok := appCtx.FromDB(h.s.ctx)
 		screenName = "Me"
@@ -387,7 +387,6 @@ func (s *Instance) GetContactPhoto(client string) (result string, err error) {
 		Status int64  `json:"status"`
 	}
 
-	// RemoteJID is the sender ID the one who send the text or the media message or basically the WhatsappID just pass it here
 	profilePicThumb, _ := s.conn.GetProfilePicThumb(client)
 	profilePic := <-profilePicThumb
 
@@ -395,14 +394,13 @@ func (s *Instance) GetContactPhoto(client string) (result string, err error) {
 	err = json.Unmarshal([]byte(profilePic), &thumbnail)
 
 	if err != nil {
-		// print error
+		return "", err
 	}
 
 	if thumbnail.Status == 404 {
-		// meaning thumbnail is not available because the person has no profile pic so what i did is return empty string
+		return "", nil
 	}
 
-	// Basically the EURL is what holds the profile picture of the person
 	return thumbnail.EURL, nil
 
 }

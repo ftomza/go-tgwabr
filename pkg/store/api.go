@@ -162,16 +162,19 @@ func (s *Store) GetStatOnPeriod(mgChatID int64, userName string, start, end time
 }
 
 func (s *Store) DeleteChat(chat *api.Chat) (bool, error) {
-	item, err := s.GetChatByClient(chat.WAClient, chat.MGID)
+	item := &Chat{}
+	ok, err := s.FindOne(s.db.Model(&Chat{}).Where(&Chat{
+		TGChatID: chat.TGChatID,
+	}), item)
 	if err != nil {
 		return false, err
 	}
-	if item == nil {
+	if !ok {
 		return false, nil
 	}
-	err = s.db.Delete(item).Error
+	err = s.db.Unscoped().Delete(&item).Error
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 	return true, nil
 }
@@ -204,4 +207,31 @@ func (s *Store) GetNotChatted(mgID int64, botName string) (res []*api.StatDay, e
 							and t0.mg_id = messages.mg_id;
 	`, botName, mgID).Scan(&res).Error
 	return
+}
+
+func (s *Store) SaveAlias(alias *api.Alias) (err error) {
+
+	item := &Alias{}
+	_, err = s.FindOne(s.db.Model(&Alias{}).Where(&Alias{WAClient: alias.WAClient, MGID: alias.MGID}), item)
+	if err != nil {
+		return err
+	}
+	id := item.ID
+	item = APIAlias(*alias).ToAlias()
+	item.ID = id
+	err = s.db.Save(item).Error
+	if err != nil {
+		return err
+	}
+	return
+}
+
+func (s *Store) GetAliasesByName(name string) (apiItems []*api.Alias, err error) {
+
+	items := Aliases{}
+	err = s.db.Model(&Alias{}).Find(&items, &Alias{Name: name}).Error
+	if err != nil {
+		return
+	}
+	return items.ToAPIAliases(), nil
 }
