@@ -46,6 +46,7 @@ func (s *Service) CommandCheckClient(update tgBotApi.Update) {
 	args := update.Message.CommandArguments()
 	args = strings.ToLower(strings.TrimSpace(args))
 	client, mgName := s.prepareArgs(args)
+	client = s.prepareClient(client)
 	txt := fmt.Sprintf("Check client: %s", client)
 	isFound := false
 	for _, v := range s.mainGroups {
@@ -386,6 +387,7 @@ func (s *Service) CommandAlias(update tgBotApi.Update) {
 	args = strings.ToLower(strings.TrimSpace(args))
 
 	client, aliasName := s.prepareArgs(args)
+	client = s.prepareClient(client)
 	if client == "" {
 		msg.Text = "Client not set"
 		return
@@ -486,6 +488,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 	args = strings.ToLower(strings.TrimSpace(args))
 
 	client, mgName := s.prepareArgs(args)
+	client = s.prepareClient(client)
 
 	if client == "" {
 		msg.Text = "Client not set"
@@ -729,62 +732,41 @@ func getPhotoByte(path string) []byte {
 
 func (s *Service) prepareArgs(args string) (arg1, arg2 string) {
 
-	repl := func(in string) (out string) {
-		out = strings.ReplaceAll(in, "(", "")
-		out = strings.ReplaceAll(out, ")", "")
-		out = strings.ReplaceAll(out, "-", "")
-		out = strings.ReplaceAll(out, "+", "")
-		out = strings.ReplaceAll(out, " ", "")
-		return
+	for _, v := range []string{`^([^a-zA-Z]+)$`, `^([^a-zA-Z]+)([A-Za-z].*)$`, `^(\S*)$`, `^(\S*)\s*(\S*)$`} {
+		compRegEx := regexp.MustCompile(v)
+		match := compRegEx.FindStringSubmatch(args)
+		if len(match) > 1 {
+			arg1 = match[1]
+		}
+
+		if len(match) > 2 {
+			arg2 = match[2]
+		}
+
+		if len(match) > 1 {
+			break
+		}
 	}
 
-	isFind := false
-	compRegEx := regexp.MustCompile(`^([^a-zA-Z]+)$`)
-	match := compRegEx.FindStringSubmatch(args)
-	if len(match) > 1 {
-		isFind = true
-		arg1 = repl(match[1])
+	return
+}
+
+func (s *Service) prepareClient(arg string) (client string) {
+
+	client = strings.ReplaceAll(arg, " ", "")
+
+	if strings.Count(client, "-") == 1 {
+		parts := strings.Split(client, "-")
+		if _, err := strconv.ParseInt(parts[0], 10, 64); err == nil {
+			if _, err = strconv.ParseInt(parts[1], 10, 64); err == nil {
+				return
+			}
+		}
 	}
 
-	if isFind {
-		return
-	}
-
-	compRegEx = regexp.MustCompile(`^([^a-zA-Z]+)([A-Za-z].*)$`)
-	match = compRegEx.FindStringSubmatch(args)
-	if len(match) > 1 {
-		isFind = true
-		arg1 = repl(match[1])
-	}
-
-	if len(match) > 2 {
-		arg2 = match[2]
-	}
-
-	if isFind {
-		return
-	}
-
-	compRegEx = regexp.MustCompile(`^(\S*)$`)
-	match = compRegEx.FindStringSubmatch(args)
-	if len(match) > 1 {
-		isFind = true
-		arg1 = match[1]
-	}
-
-	if isFind {
-		return
-	}
-
-	compRegEx = regexp.MustCompile(`^(\S*)\s*(\S*)$`)
-	match = compRegEx.FindStringSubmatch(args)
-	if len(match) > 1 {
-		arg1 = match[1]
-	}
-
-	if len(match) > 2 {
-		arg2 = match[2]
-	}
-
+	client = strings.ReplaceAll(client, "(", "")
+	client = strings.ReplaceAll(client, ")", "")
+	client = strings.ReplaceAll(client, "-", "")
+	client = strings.ReplaceAll(client, "+", "")
 	return
 }

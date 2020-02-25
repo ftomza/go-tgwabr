@@ -35,6 +35,8 @@ func TestService_prepareArgs(t *testing.T) {
 		{name: "Phone4", fields: fields{}, args: args{"79111135900"}, wantArg1: "79111135900", wantArg2: ""},
 		{name: "Alias MG", fields: fields{}, args: args{"artem dubai"}, wantArg1: "artem", wantArg2: "dubai"},
 		{name: "Alias", fields: fields{}, args: args{"artem"}, wantArg1: "artem", wantArg2: ""},
+		{name: "Group", fields: fields{}, args: args{"13258-3698"}, wantArg1: "13258-3698", wantArg2: ""},
+		{name: "Group MG", fields: fields{}, args: args{"13258-3698 dubai"}, wantArg1: "13258-3698", wantArg2: "dubai"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -45,6 +47,7 @@ func TestService_prepareArgs(t *testing.T) {
 				TG:         tt.fields.TG,
 			}
 			gotArg1, gotArg2 := s.prepareArgs(tt.args.args)
+			gotArg1 = s.prepareClient(gotArg1)
 			if gotArg1 != tt.wantArg1 {
 				t.Errorf("prepareArgs() gotArg1 = %v, want %v", gotArg1, tt.wantArg1)
 			}
