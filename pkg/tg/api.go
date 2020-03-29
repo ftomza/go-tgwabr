@@ -155,7 +155,7 @@ func (s *Service) UpdateStatMessage() {
 			if i.TGUserName != "" {
 				userName = "@" + i.TGUserName
 			}
-			txt = fmt.Sprintf("%s\n - %s(%s) from [%s]>%s: %d", txt, name, client, userName, i.Date.Format("2006-01-02"), i.Count)
+			txt = fmt.Sprintf("%s\n - %s(%s) from [%s]>%s: %d, ur: %d", txt, name, client, userName, i.Date.Format("2006-01-02"), i.Count, i.CountUnread)
 		}
 
 		grp, err := db.GetMainGroupByTGID(v)

@@ -45,7 +45,7 @@ func (s *Service) CommandCheckClient(update tgBotApi.Update) {
 
 	args := update.Message.CommandArguments()
 	args = strings.ToLower(strings.TrimSpace(args))
-	client, mgName := s.prepareArgs(args)
+	client, _ := s.prepareArgs(args)
 	client = s.prepareClient(client)
 	txt := fmt.Sprintf("Check client: %s", client)
 	isFound := false
@@ -63,7 +63,7 @@ func (s *Service) CommandCheckClient(update tgBotApi.Update) {
 		isFound = true
 
 		mg, _ := db.GetMainGroupByTGID(v)
-		mgName = "-"
+		mgName := "-"
 		if mg != nil {
 			mgName = mg.Name
 		}
@@ -710,12 +710,14 @@ func (s *Service) CommandLeave(update tgBotApi.Update) {
 	}
 	msg.Text = txt
 
-	_, _ = s.bot.SetChatTitle(tgBotApi.SetChatTitleConfig{
-		ChatID: update.Message.Chat.ID,
-		Title:  fmt.Sprintf("H.W.Bot Free chat"),
-	})
+	if s.IsMainGroup(chatID) {
+		_, _ = s.bot.SetChatTitle(tgBotApi.SetChatTitleConfig{
+			ChatID: update.Message.Chat.ID,
+			Title:  fmt.Sprintf("H.W.Bot Free chat"),
+		})
 
-	_, _ = s.bot.DeleteChatPhoto(tgBotApi.DeleteChatPhotoConfig{ChatID: update.Message.Chat.ID})
+		_, _ = s.bot.DeleteChatPhoto(tgBotApi.DeleteChatPhotoConfig{ChatID: update.Message.Chat.ID})
+	}
 }
 
 func getPhotoByte(path string) []byte {

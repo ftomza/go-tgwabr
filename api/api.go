@@ -44,6 +44,7 @@ type Message struct {
 	TGFwdChatID    int64
 	Direction      string
 	Chatted        string
+	MessageStatus  int
 	Text           string
 }
 
@@ -67,10 +68,11 @@ type Stat struct {
 }
 
 type StatDay struct {
-	Date       time.Time
-	WAClient   string
-	TGUserName string
-	Count      int
+	Date        time.Time
+	WAClient    string
+	TGUserName  string
+	Count       int
+	CountUnread int
 }
 
 type Alias struct {

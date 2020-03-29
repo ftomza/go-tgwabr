@@ -192,10 +192,12 @@ func (s *Store) GetNotChatted(mgID int64, botName string) (res []*api.StatDay, e
           and tg_user_name != ?
         order by created_at DESC
         limit 1)           tg_user_name,
-       t0.cnt              "count"
+       t0.cnt              "count",
+       t0.cnt_unr              "count_unread"
 	from (select max(created_at)      at,
 				 wa_client,
 				 count(wa_message_id) cnt,
+				 count(case when message_status < 4 then wa_message_id end) cnt_unr,	
 				 mg_id
 		  from messages
 		  where chatted = 'no'

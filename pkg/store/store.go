@@ -43,6 +43,7 @@ type Message struct {
 	TGFwdMessageID int    `gorm:"index"`
 	Direction      string `gorm:"index"`
 	Chatted        string `gorm:"index"`
+	MessageStatus  int
 	Text           string
 }
 

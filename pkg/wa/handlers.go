@@ -65,6 +65,7 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 		WATimestamp:    info.Timestamp,
 		WAFwdMessageID: msg.WAFwdMessageID,
 		Chatted:        api.ChattedNo,
+		MessageStatus:  int(info.Status),
 		Text:           msg.Text,
 	}
 
@@ -84,13 +85,15 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 	}
 
 	if doSave {
-		if db.ExistMessageByWA(msg.WAMessageID) {
-			return
-		}
+		exist := db.ExistMessageByWA(msg.WAMessageID)
 
 		err := db.SaveMessage(msg)
 		if err != nil {
 			log.Println("Save store error: ", err)
+		}
+
+		if exist {
+			return
 		}
 	}
 
@@ -224,7 +227,8 @@ func (s *Instance) HandleLocationMessage(message whatsapp.LocationMessage) {
 	s.handleMessage(message, true)
 }
 
-func (s *Instance) HandleJsonMessage(_ string) {
+func (s *Instance) HandleJsonMessage(message string) {
+	println(message)
 }
 
 func (s *Instance) HandleContactMessage(_ whatsapp.ContactMessage) {
