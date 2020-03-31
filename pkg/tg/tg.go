@@ -23,6 +23,8 @@ func New(ctx context.Context) (service *Service, err error) {
 
 	service = &Service{ctx: ctx}
 
+	// return nil, nil
+
 	mainGroupsStr := os.Getenv("TG_MAIN_GROUPS")
 	for _, v := range strings.Split(mainGroupsStr, ",") {
 		g, err := strconv.ParseInt(v, 10, 64)
