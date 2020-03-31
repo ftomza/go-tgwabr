@@ -164,6 +164,11 @@ func (s *Service) UpdateStatMessage() {
 			return
 		}
 
+		if grp == nil {
+			log.Println("Error get MainGroup not found: ", v)
+			return
+		}
+
 		if grp.MessagePin > 0 && txt != "" {
 			msg := tgbotapi.NewEditMessageText(v, grp.MessagePin, txt)
 			_, err = s.bot.Send(msg)

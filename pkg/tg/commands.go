@@ -710,7 +710,7 @@ func (s *Service) CommandLeave(update tgBotApi.Update) {
 	}
 	msg.Text = txt
 
-	if s.IsMainGroup(chatID) {
+	if !s.IsMainGroup(chatID) {
 		_, _ = s.bot.SetChatTitle(tgBotApi.SetChatTitleConfig{
 			ChatID: update.Message.Chat.ID,
 			Title:  fmt.Sprintf("H.W.Bot Free chat"),
