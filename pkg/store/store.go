@@ -8,6 +8,7 @@ import (
 	"tgwabr/pkg"
 
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
@@ -162,8 +163,16 @@ func New(ctx context.Context) (store *Store, err error) {
 	store = &Store{ctx: ctx}
 
 	name := os.Getenv("NAME_INSTANCE")
+	user := os.Getenv("DB_USER")
+	pass := os.Getenv("DB_PASS")
+	db := os.Getenv("DB_NAME")
+	dialect := os.Getenv("TYPE_DB")
 
-	store.db, err = gorm.Open("sqlite3", name+"_main.db")
+	urn := name + "_main.db"
+	if dialect == "mysql" {
+		urn = fmt.Sprintf("%s:%s@/%s?charset=utf8&parseTime=True&loc=Local", user, pass, db)
+	}
+	store.db, err = gorm.Open(dialect, urn)
 	if err != nil {
 		return store, fmt.Errorf("error open DB: %w", err)
 	}
