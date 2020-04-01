@@ -6,6 +6,7 @@ import (
 	"os"
 	"tgwabr/api"
 	"tgwabr/pkg"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -179,6 +180,11 @@ func New(ctx context.Context) (store *Store, err error) {
 
 	if os.Getenv("STORE_DEBUG") != "" {
 		store.db = store.db.Debug()
+	}
+	if dialect == "mysql" {
+		store.db.DB().SetMaxOpenConns(20)
+		store.db.DB().SetMaxIdleConns(2)
+		store.db.DB().SetConnMaxLifetime(time.Second * 20)
 	}
 	// Migrate the schema
 	store.db.AutoMigrate(&Chat{})
