@@ -190,7 +190,11 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 func (s *Instance) HandleError(err error) {
 
 	if e, ok := err.(*whatsapp.ErrConnectionFailed); ok || errors.Is(err, whatsapp.ErrInvalidWsData) {
-		log.Printf("Connection failed, underlying error: %v", e.Err)
+		errp := err
+		if e != nil {
+			errp = e.Err
+		}
+		log.Printf("Connection failed, underlying error: %v", errp)
 		log.Println("WAInstance Waiting 30sec...")
 		<-time.After(30 * time.Second)
 		log.Println("WAInstance Reconnecting...")
