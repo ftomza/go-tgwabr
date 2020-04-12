@@ -8,8 +8,9 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - name: GolangCI-Lint Action
-        uses: actions-contrib/golangci-lint@v0.1.0
+      - uses: actions/checkout@v2
+      - name: Run golangci-lint
+        uses: actions-contrib/golangci-lint@v1
   build:
     name: Build
     runs-on: ubuntu-latest
