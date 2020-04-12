@@ -173,6 +173,8 @@ func (s *Service) HandleCommand(update tgbotapi.Update) {
 		s.CommandCheckClient(update)
 	case "alias":
 		s.CommandAlias(update)
+	case "set_logger":
+		s.CommandSetLogger(update)
 	default:
 		s.BotSend(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Command '%s' not implement", update.Message.Command())))
 	}

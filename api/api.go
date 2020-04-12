@@ -55,9 +55,10 @@ type Chat struct {
 }
 
 type MainGroup struct {
-	TGChatID   int64
-	Name       string
-	MessagePin int
+	TGChatID     int64
+	Name         string
+	MessagePin   int
+	LoggerChatID int64
 }
 
 type Stat struct {
@@ -114,6 +115,7 @@ type TG interface {
 	SendLocation(chatID int64, lat, lon float64) (msg *TGMessage, err error)
 	DeleteMessage(chatID int64, messageID int) (err error)
 	UpdateStatMessage()
+	SendLog(text string)
 }
 
 type Store interface {

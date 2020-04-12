@@ -148,4 +148,5 @@ func (s *Service) mainLoop(updates tgbotapi.UpdatesChannel) {
 
 		s.HandleTextMessage(update)
 	}
+	panic("Exit main loop")
 }

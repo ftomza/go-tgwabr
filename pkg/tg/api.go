@@ -208,3 +208,6 @@ func (s *Service) UpdateStatMessage() {
 	}
 
 }
+
+func (s *Service) SendLog(text string) {
+}

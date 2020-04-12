@@ -84,6 +84,9 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 		if msg.Text != "" {
 			s.BotSend(msg)
 		}
+		if err != nil {
+			s.SendLog(err.Error())
+		}
 	}()
 
 	if s.IsMainGroup(chatID) {
@@ -120,7 +123,8 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 
 	items := []*api.Stat{}
 	for _, v := range s.mainGroups {
-		member, err := s.bot.GetChatMember(tgBotApi.ChatConfigWithUser{
+		var member tgBotApi.ChatMember
+		member, err = s.bot.GetChatMember(tgBotApi.ChatConfigWithUser{
 			ChatID: v,
 			UserID: update.Message.From.ID,
 		})
@@ -134,7 +138,8 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 		if !(member.IsCreator() || member.IsAdministrator()) {
 			userName = update.Message.From.UserName
 		}
-		res, err := db.GetStatOnPeriod(v, userName, dateStart, dateEnd)
+		var res []*api.Stat
+		res, err = db.GetStatOnPeriod(v, userName, dateStart, dateEnd)
 		if err != nil {
 			msg.Text = fmt.Sprintf("Fail get Stat, please send admin this error: %s", err)
 			return
@@ -209,6 +214,73 @@ func (s *Service) CommandSet(update tgBotApi.Update) {
 	}
 
 	msg.Text = "MainGroup Set: OK"
+}
+
+func (s *Service) CommandSetLogger(update tgBotApi.Update) {
+
+	chatID := update.Message.Chat.ID
+
+	msg := tgBotApi.NewMessage(chatID, "")
+	defer func() {
+		if msg.Text != "" {
+			s.BotSend(msg)
+		}
+	}()
+
+	if s.IsMainGroup(chatID) {
+		msg.Text = "Command not work 'Main group'"
+		return
+	}
+
+	db, ok := context.FromDB(s.ctx)
+	if !ok {
+		msg.Text = "Module Store not ready"
+		return
+	}
+
+	member, err := s.bot.GetChatMember(tgBotApi.ChatConfigWithUser{
+		ChatID: chatID,
+		UserID: update.Message.From.ID,
+	})
+
+	if err != nil {
+		msg.Text = fmt.Sprintf("Fail get member of main group, please send admin this error: %s", err)
+		return
+	}
+
+	if !(member.IsAdministrator()) {
+		msg.Text = fmt.Sprintf("Forbbiden, only Admin")
+		return
+	}
+
+	mgName := update.Message.CommandArguments()
+	mgName = strings.ToLower(strings.TrimSpace(mgName))
+
+	mg, err := db.GetMainGroupByName(mgName)
+	if err != nil {
+		msg.Text = fmt.Sprintf("Fail get MainGroup '%s', please send admin this error: %s", mgName, err)
+		log.Println("Error get mainGroup store: ", err)
+		return
+	}
+	if mg == nil {
+		msg.Text = fmt.Sprintf("Fail, MainGroup '%s' not found", mgName)
+		return
+	}
+	if !s.IsMemberMainGroup(update.Message.From.ID, mg.TGChatID) {
+		msg.Text = fmt.Sprintf("Access denied! You are not MainGroup '%s' member", mgName)
+		return
+	}
+
+	mg.LoggerChatID = chatID
+
+	err = db.SaveMainGroup(mg)
+	if err != nil {
+		msg.Text = fmt.Sprintf("Fail set logger for '%s', please send admin this error: %s", mgName, err)
+		log.Println("Error save mainGroup store: ", err)
+		return
+	}
+
+	msg.Text = "Set Logger: OK"
 }
 
 func (s *Service) CommandStatus(update tgBotApi.Update) {
@@ -678,7 +750,7 @@ func (s *Service) CommandLeave(update tgBotApi.Update) {
 		return
 	}
 
-	chats, err := db.GetChatsByChatID(update.Message.Chat.ID)
+	chats, err := db.GetChatsByChatID(chatID)
 	if err != nil {
 		msg.Text = fmt.Sprintf("Fail leave 'all' chats, please send admin this error: %s", err)
 		log.Println("Error get chats store: ", err)
