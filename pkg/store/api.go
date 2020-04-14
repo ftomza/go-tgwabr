@@ -149,8 +149,8 @@ func (s *Store) GetMessagesNotChattedByClient(client string) (msg []*api.Message
 
 func (s *Store) GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) (res []*api.Stat, err error) {
 	res = []*api.Stat{}
-	q := s.db.Table("messages").Select("created_at `date`, tg_user_name, wa_name, count(id) `count`").
-		Where("mg_id = ? and created_at between date(?) and date(?, '+1 days')", mgChatID, start, end)
+	q := s.db.Table("messages").Select("date(created_at) `date`, tg_user_name, wa_name, count(id) `count`").
+		Where("mg_id = ? and created_at between ? and DATE_ADD(?, INTERVAL 1 DAY)", mgChatID, start, end)
 	if userName != "" {
 		q = q.Where("tg_user_name = ?", userName)
 	}
