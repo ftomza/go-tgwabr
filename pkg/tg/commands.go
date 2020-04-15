@@ -343,12 +343,6 @@ Contacts: %s, count: %d
 Chats:
  %s
 `, device, login, loadContactStr, countContacts, chatStat)
-
-	if wac.GetStatusLogin() {
-		msg.Text = "Online"
-	} else {
-		msg.Text = "Offline"
-	}
 }
 
 func (s *Service) CommandHistory(update tgBotApi.Update) {
