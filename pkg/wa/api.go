@@ -26,6 +26,31 @@ func (s *Instance) GetStatusLogin() bool {
 	return true
 }
 
+func (s *Instance) GetStatusDevice() bool {
+	return s.conn.Info.Connected
+}
+
+func (s *Instance) GetStatusContacts() (bool, int) {
+	load := false
+	count := 0
+
+	if s.conn.Store.Contacts != nil && len(s.conn.Store.Contacts) > 0 {
+		load = true
+		count = len(s.conn.Store.Contacts)
+	}
+
+	return load, count
+}
+
+func (s *Instance) GetUnreadChat() map[string]string {
+	res := map[string]string{}
+	for _, v := range s.conn.Store.Chats {
+		res[v.Jid] = v.Unread
+	}
+
+	return res
+}
+
 func (s *Instance) DoLogin() (ok bool, err error) {
 	err = s.login(false)
 	if err != nil {

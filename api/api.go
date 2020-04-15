@@ -33,6 +33,8 @@ type Message struct {
 	MGID           string
 	WAClient       string
 	WAName         string
+	WAFromClient   string
+	WAFromName     string
 	WAMessageID    string
 	WATimestamp    uint64
 	WAFwdMessageID string
@@ -87,6 +89,9 @@ type WA interface {
 }
 
 type WAInstance interface {
+	GetUnreadChat() map[string]string
+	GetStatusContacts() (bool, int)
+	GetStatusDevice() bool
 	GetStatusLogin() bool
 	DoLogin() (bool, error)
 	DoLogout() (bool, error)

@@ -311,6 +311,39 @@ func (s *Service) CommandStatus(update tgBotApi.Update) {
 		return
 	}
 
+	device := "Disconnect"
+	if wac.GetStatusDevice() {
+		device = "Connect"
+	}
+
+	loadContactStr := "No"
+	loadContact, countContacts := wac.GetStatusContacts()
+	if loadContact {
+		loadContactStr = "Yes"
+	}
+
+	login := "Offline"
+	if wac.GetStatusLogin() {
+		login = "Online"
+	}
+
+	chatStat := ""
+	for k, v := range wac.GetUnreadChat() {
+
+		chatStat = chatStat + fmt.Sprintf(" - %s (%s): %s\n", wac.GetClientName(k), wac.GetShortClient(k), v)
+	}
+	if chatStat == "" {
+		chatStat = "No unread chats :)"
+	}
+
+	msg.Text = fmt.Sprintf(`
+Device: %s
+Login: %s
+Contacts: %s, count: %d
+Chats:
+ %s
+`, device, login, loadContactStr, countContacts, chatStat)
+
 	if wac.GetStatusLogin() {
 		msg.Text = "Online"
 	} else {

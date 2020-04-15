@@ -36,6 +36,8 @@ type Message struct {
 	MGID           string `gorm:"index"`
 	WAClient       string `gorm:"index"`
 	WAName         string
+	WAFromClient   string
+	WAFromName     string
 	WAMessageID    string `gorm:"index"`
 	WATimestamp    uint64
 	WAFwdMessageID string `gorm:"index"`

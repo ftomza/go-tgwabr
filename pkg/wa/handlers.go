@@ -57,10 +57,13 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 	}
 
 	name := s.conn.Store.Contacts[info.RemoteJid].Name
+	fromName := s.conn.Store.Contacts[info.SenderJid].Name
 	msg = &api.Message{
 		MGID:           s.GetID(),
 		WAClient:       info.RemoteJid,
 		WAName:         name,
+		WAFromName:     fromName,
+		WAFromClient:   info.SenderJid,
 		WAMessageID:    info.Id,
 		WATimestamp:    info.Timestamp,
 		WAFwdMessageID: msg.WAFwdMessageID,
@@ -85,15 +88,13 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 	}
 
 	if doSave {
-		exist := db.ExistMessageByWA(msg.WAMessageID)
+		if db.ExistMessageByWA(msg.WAMessageID) {
+			return
+		}
 
 		err := db.SaveMessage(msg)
 		if err != nil {
 			log.Println("Save store error: ", err)
-		}
-
-		if exist {
-			return
 		}
 	}
 
