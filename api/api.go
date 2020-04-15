@@ -89,8 +89,8 @@ type WA interface {
 }
 
 type WAInstance interface {
-	GetUnreadChat() map[string]string
-	GetStatusContacts() (bool, int)
+	GetUnreadChat() (map[string]string, int, string)
+	GetStatusContacts() (bool, int, string)
 	GetStatusDevice() bool
 	GetStatusLogin() bool
 	DoLogin() (bool, error)

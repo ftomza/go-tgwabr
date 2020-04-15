@@ -317,7 +317,7 @@ func (s *Service) CommandStatus(update tgBotApi.Update) {
 	}
 
 	loadContactStr := "No"
-	loadContact, countContacts := wac.GetStatusContacts()
+	loadContact, countContacts, descContacts := wac.GetStatusContacts()
 	if loadContact {
 		loadContactStr = "Yes"
 	}
@@ -328,7 +328,8 @@ func (s *Service) CommandStatus(update tgBotApi.Update) {
 	}
 
 	chatStat := ""
-	for k, v := range wac.GetUnreadChat() {
+	chats, countChats, descChats := wac.GetUnreadChat()
+	for k, v := range chats {
 
 		chatStat = chatStat + fmt.Sprintf(" - %s (%s): %s\n", wac.GetClientName(k), wac.GetShortClient(k), v)
 	}
@@ -339,10 +340,10 @@ func (s *Service) CommandStatus(update tgBotApi.Update) {
 	msg.Text = fmt.Sprintf(`
 Device: %s
 Login: %s
-Contacts: %s, count: %d
-Chats:
+Contacts: %s, load: %s, count: %d
+Chats: %s, count: %d, items:
  %s
-`, device, login, loadContactStr, countContacts, chatStat)
+`, device, login, descContacts, loadContactStr, countContacts, descChats, countChats, chatStat)
 }
 
 func (s *Service) CommandHistory(update tgBotApi.Update) {

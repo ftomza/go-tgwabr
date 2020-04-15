@@ -21,6 +21,16 @@ type Service struct {
 	api.WA
 }
 
+type StatusItem struct {
+	At   time.Time
+	Desc string
+}
+
+type InstanceStatus struct {
+	ChatsLoad    StatusItem
+	ContactsLoad StatusItem
+}
+
 type Instance struct {
 	ctx  context.Context
 	id   int64
@@ -28,6 +38,7 @@ type Instance struct {
 	api.WAInstance
 	clients   []string
 	pointTime uint64
+	status    InstanceStatus
 }
 
 func New(ctx context.Context) (service *Service, err error) {
@@ -55,7 +66,7 @@ func New(ctx context.Context) (service *Service, err error) {
 			return service, fmt.Errorf("error creating connection: %w", err)
 		}
 
-		instance.conn.SetClientVersion(0, 4, 2081)
+		// instance.conn.SetClientVersion(0, 4, 2081)
 
 		instance.conn.AddHandler(instance)
 		if err = instance.login(true); err != nil {

@@ -30,25 +30,28 @@ func (s *Instance) GetStatusDevice() bool {
 	return s.conn.Info.Connected
 }
 
-func (s *Instance) GetStatusContacts() (bool, int) {
-	load := false
-	count := 0
-
-	if s.conn.Store.Contacts != nil && len(s.conn.Store.Contacts) > 0 {
-		load = true
-		count = len(s.conn.Store.Contacts)
+func (s *Instance) GetStatusContacts() (bool, int, string) {
+	desc := " not sync"
+	if s.status.ContactsLoad.Desc != "" {
+		desc = fmt.Sprintf(" sync: %s, %s", s.status.ContactsLoad.At.Format(time.RFC822), s.status.ContactsLoad.Desc)
 	}
 
-	return load, count
+	return len(s.conn.Store.Contacts) > 0, len(s.conn.Store.Contacts), desc
 }
 
-func (s *Instance) GetUnreadChat() map[string]string {
+func (s *Instance) GetUnreadChat() (map[string]string, int, string) {
 	res := map[string]string{}
+	desc := " not sync"
+	if s.status.ChatsLoad.Desc != "" {
+		desc = fmt.Sprintf(" sync: %s, %s", s.status.ChatsLoad.At.Format(time.RFC822), s.status.ChatsLoad.Desc)
+	}
 	for _, v := range s.conn.Store.Chats {
-		res[v.Jid] = v.Unread
+		if v.Unread != "0" {
+			res[v.Jid] = v.Unread
+		}
 	}
 
-	return res
+	return res, len(s.conn.Store.Chats), desc
 }
 
 func (s *Instance) DoLogin() (ok bool, err error) {
@@ -443,4 +446,20 @@ func (s *Instance) PrepareClientJID(client string) string {
 
 func (s *Instance) GetID() string {
 	return fmt.Sprintf("%d", s.id)
+}
+
+func (s *Instance) sendStatusReady() {
+	if !(strings.Count(s.status.ContactsLoad.Desc, "Load") > 0 &&
+		strings.Count(s.status.ChatsLoad.Desc, "Load") > 0) {
+		return
+	}
+
+	log.Println("WAInstance is sync")
+
+	tg, ok := appCtx.FromTG(s.ctx)
+	if !ok {
+		return
+	}
+
+	_, _ = tg.SendMessage(s.id, "Bot is sync... check /status")
 }

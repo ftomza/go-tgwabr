@@ -233,8 +233,31 @@ func (s *Instance) HandleLocationMessage(message whatsapp.LocationMessage) {
 }
 
 func (s *Instance) HandleJsonMessage(message string) {
-	println(message)
+	log.Println("WAInstance message JSON: ", message)
 }
 
 func (s *Instance) HandleContactMessage(_ whatsapp.ContactMessage) {
+}
+
+func (s *Instance) HandleContactList(contacts []whatsapp.Contact) {
+	log.Printf("WAInstance contacts load: %d\n", len(contacts))
+	s.status.ContactsLoad.At = time.Now()
+	if len(contacts) > 0 {
+		s.status.ContactsLoad.Desc = fmt.Sprintf("Load: %d", len(contacts))
+		s.sendStatusReady()
+	} else {
+		s.status.ContactsLoad.Desc = "Receive empty"
+	}
+	s.sendStatusReady()
+}
+
+func (s *Instance) HandleChatList(chats []whatsapp.Chat) {
+	log.Printf("WAInstance chat load: %d\n", len(chats))
+	s.status.ChatsLoad.At = time.Now()
+	if len(chats) > 0 {
+		s.status.ChatsLoad.Desc = fmt.Sprintf("Load: %d", len(chats))
+		s.sendStatusReady()
+	} else {
+		s.status.ChatsLoad.Desc = "Receive empty"
+	}
 }
