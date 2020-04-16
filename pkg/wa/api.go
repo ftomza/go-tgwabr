@@ -23,7 +23,7 @@ func (s *Instance) ReadMessage(client, messageID string) (err error) {
 		return err
 	}
 	res := <-ch
-	log.Println("WAInstance Read message result: ", res)
+	log.Println("WAInstance Read message result: ", res) //{"status":200}
 	return nil
 }
 
@@ -93,15 +93,18 @@ func (s *Instance) DoLogout() (bool, error) {
 
 func (s *Instance) ClientExist(client string) bool {
 	jid := s.PrepareClientJID(client)
-	ch, err := s.conn.Exist(jid)
-	if err == nil {
-		log.Println("WAInstance Exist result: ", <-ch)
-	} else {
-		log.Println("WAInstance Exist error: ", err)
-	}
 	_, ok := s.conn.Store.Contacts[jid]
 	if !ok {
 		ok = pkg.StringInSlice(jid, s.clients)
+	} else {
+		ch, err := s.conn.Exist(jid)
+		if err == nil {
+			status := <-ch
+			log.Println("WAInstance Exist result: ", status)
+			ok = strings.Contains(status, "\"status\":200,\"")
+		} else {
+			log.Println("WAInstance Exist error: ", err)
+		}
 	}
 	return ok
 }
