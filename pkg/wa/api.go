@@ -39,7 +39,10 @@ func (s *Instance) GetStatusLogin() bool {
 }
 
 func (s *Instance) GetStatusDevice() bool {
-	return s.conn.Info.Connected
+	if s.conn.Info != nil {
+		return s.conn.Info.Connected
+	}
+	return false
 }
 
 func (s *Instance) GetStatusContacts() (bool, int, string) {
@@ -47,8 +50,10 @@ func (s *Instance) GetStatusContacts() (bool, int, string) {
 	if s.status.ContactsLoad.Desc != "" {
 		desc = fmt.Sprintf(" sync: %s, %s", s.status.ContactsLoad.At.Format(time.RFC822), s.status.ContactsLoad.Desc)
 	}
-
-	return len(s.conn.Store.Contacts) > 0, len(s.conn.Store.Contacts), desc
+	if s.conn.Store != nil {
+		return len(s.conn.Store.Contacts) > 0, len(s.conn.Store.Contacts), desc
+	}
+	return false, 0, desc
 }
 
 func (s *Instance) GetUnreadChat() (map[string]string, int, string) {
@@ -56,6 +61,9 @@ func (s *Instance) GetUnreadChat() (map[string]string, int, string) {
 	desc := " not sync"
 	if s.status.ChatsLoad.Desc != "" {
 		desc = fmt.Sprintf(" sync: %s, %s", s.status.ChatsLoad.At.Format(time.RFC822), s.status.ChatsLoad.Desc)
+	}
+	if s.conn.Store == nil {
+		return res, 0, desc
 	}
 	for _, v := range s.conn.Store.Chats {
 		if v.Unread != "0" {
