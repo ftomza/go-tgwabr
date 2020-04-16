@@ -27,17 +27,17 @@ func Init() func() {
 
 	ctx = appCtx.NewDB(ctx, storeImpl)
 
-	if waImpl, err = wa.New(ctx); err != nil {
-		log.Fatalln("Fail WAInstance Instance: ", err)
-	}
-
-	ctx = appCtx.NewWA(ctx, waImpl)
-
 	if tgImpl, err = tg.New(ctx); err != nil {
 		log.Fatalln("Fail TG Instance: ", err)
 	}
 
 	ctx = appCtx.NewTG(ctx, tgImpl)
+
+	if waImpl, err = wa.New(ctx); err != nil {
+		log.Fatalln("Fail WAInstance Instance: ", err)
+	}
+
+	ctx = appCtx.NewWA(ctx, waImpl)
 
 	if cacheImpl, err = cache.New(ctx, cache.Config{GetMembers: tgImpl.GetMembers}); err != nil {
 		log.Fatalln("Fail Cache Instance: ", err)
@@ -45,6 +45,7 @@ func Init() func() {
 
 	ctx = appCtx.NewCache(ctx, cacheImpl)
 	waImpl.UpdateCTX(ctx)
+	tgImpl.UpdateCTX(ctx)
 
 	return func() {
 		if err = waImpl.ShutDown(); err != nil {

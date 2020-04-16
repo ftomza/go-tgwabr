@@ -89,6 +89,7 @@ type WA interface {
 }
 
 type WAInstance interface {
+	ReadMessage(client, messageID string) (err error)
 	GetUnreadChat() (map[string]string, int, string)
 	GetStatusContacts() (bool, int, string)
 	GetStatusDevice() bool

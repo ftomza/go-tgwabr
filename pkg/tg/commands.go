@@ -329,9 +329,16 @@ func (s *Service) CommandStatus(update tgBotApi.Update) {
 
 	chatStat := ""
 	chats, countChats, descChats := wac.GetUnreadChat()
+	i := 0
 	for k, v := range chats {
-
+		if i > 4 {
+			break
+		}
 		chatStat = chatStat + fmt.Sprintf(" - %s (%s): %s\n", wac.GetClientName(k), wac.GetShortClient(k), v)
+		i++
+	}
+	if i > 0 && len(chats) > i {
+		chatStat = chatStat + fmt.Sprintf(" ... %d more chats\n", len(chats))
 	}
 	if chatStat == "" {
 		chatStat = "No unread chats :)"
@@ -730,6 +737,10 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 	for _, v := range messages {
 
 		msgTransfer := tgBotApi.NewMessage(chatID, v.Text)
+		err = wac.ReadMessage(v.WAClient, v.WAMessageID)
+		if err != nil {
+			log.Println("Error transfer message: ", err)
+		}
 		resp := s.BotSend(msgTransfer)
 		err = s.DeleteMessage(v.TGChatID, v.TGMessageID)
 		if err != nil {
@@ -740,7 +751,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 		v.TGChatID = tgMsg.ChatID
 		v.TGMessageID = tgMsg.MessageID
 		v.TGTimestamp = tgMsg.Timestamp
-		v.TGUserName = tgMsg.UserName
+		v.TGUserName = update.Message.From.UserName
 		v.TGFwdMessageID = tgMsg.FwdMessageID
 		v.Chatted = api.ChattedYes
 

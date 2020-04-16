@@ -15,6 +15,18 @@ import (
 	waproto "github.com/Rhymen/go-whatsapp/binary/proto"
 )
 
+func (s *Instance) ReadMessage(client, messageID string) (err error) {
+	jid := s.PrepareClientJID(client)
+	ch, err := s.conn.Read(jid, messageID)
+	if err != nil {
+		log.Println("WAInstance error Read message: ", err)
+		return err
+	}
+	res := <-ch
+	log.Println("WAInstance Read message result: ", res)
+	return nil
+}
+
 func (s *Instance) GetStatusLogin() bool {
 	pong, err := s.conn.AdminTest()
 
@@ -81,6 +93,12 @@ func (s *Instance) DoLogout() (bool, error) {
 
 func (s *Instance) ClientExist(client string) bool {
 	jid := s.PrepareClientJID(client)
+	ch, err := s.conn.Exist(jid)
+	if err == nil {
+		log.Println("WAInstance Exist result: ", <-ch)
+	} else {
+		log.Println("WAInstance Exist error: ", err)
+	}
 	_, ok := s.conn.Store.Contacts[jid]
 	if !ok {
 		ok = pkg.StringInSlice(jid, s.clients)
