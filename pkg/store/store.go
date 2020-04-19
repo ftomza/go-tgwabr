@@ -25,9 +25,10 @@ type MainGroup struct {
 type Chat struct {
 	gorm.Model
 
-	MGID     string `gorm:"index"`
-	WAClient string `gorm:"index"`
-	TGChatID int64  `gorm:"index"`
+	MGID       string `gorm:"index"`
+	WAClient   string `gorm:"index"`
+	TGChatID   int64  `gorm:"index"`
+	TGUserName string
 }
 
 type Message struct {

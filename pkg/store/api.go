@@ -182,7 +182,7 @@ func (s *Store) DeleteChat(chat *api.Chat) (bool, error) {
 func (s *Store) GetNotChatted(mgID int64, botName string) (res []*api.StatDay, err error) {
 	res = []*api.StatDay{}
 	err = s.db.Raw(`
-	select messages.created_at "date",
+	select distinct messages.created_at "date",
        t0.wa_client,
        (select tg_user_name
         from messages

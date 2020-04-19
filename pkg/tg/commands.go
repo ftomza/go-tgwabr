@@ -566,6 +566,8 @@ func (s *Service) CommandLogout(update tgBotApi.Update) {
 func (s *Service) CommandJoin(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID
+	userName := update.Message.From.UserName
+	userID := update.Message.From.ID
 
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
@@ -616,7 +618,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 	mgChatID := int64(0)
 	if len(aliases) == 1 {
 		mgChatID, _ = strconv.ParseInt(aliases[0].MGID, 10, 64)
-		if !s.IsMemberMainGroup(update.Message.From.ID, mgChatID) {
+		if !s.IsMemberMainGroup(userID, mgChatID) {
 			mgChatID = 0
 		}
 	}
@@ -632,7 +634,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 			msg.Text = fmt.Sprintf("Fail, MainGroup '%s' not found", mgName)
 			return
 		}
-		if !s.IsMemberMainGroup(update.Message.From.ID, mg.TGChatID) {
+		if !s.IsMemberMainGroup(userID, mg.TGChatID) {
 			msg.Text = fmt.Sprintf("Access denied! You are not MainGroup '%s' member", mgName)
 			return
 		}
@@ -641,7 +643,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 
 		isOne := true
 		for _, v := range s.mainGroups {
-			isMember := s.IsMemberMainGroup(update.Message.From.ID, v)
+			isMember := s.IsMemberMainGroup(userID, v)
 			if isMember && !isOne {
 				msg.Text = fmt.Sprintf("Fail, You are part of severall MainGroups, please specify the one. Example: /join tel[or alias] group")
 				return
@@ -676,9 +678,10 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 	name := wac.GetClientName(client)
 
 	chat := api.Chat{
-		MGID:     wac.GetID(),
-		WAClient: wac.PrepareClientJID(client),
-		TGChatID: chatID,
+		MGID:       wac.GetID(),
+		WAClient:   wac.PrepareClientJID(client),
+		TGChatID:   chatID,
+		TGUserName: userName,
 	}
 
 	items, err := db.GetChatsByChatID(chat.TGChatID)
@@ -751,7 +754,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 		v.TGChatID = tgMsg.ChatID
 		v.TGMessageID = tgMsg.MessageID
 		v.TGTimestamp = tgMsg.Timestamp
-		v.TGUserName = update.Message.From.UserName
+		v.TGUserName = userName
 		v.TGFwdMessageID = tgMsg.FwdMessageID
 		v.Chatted = api.ChattedYes
 

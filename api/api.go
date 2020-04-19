@@ -51,9 +51,10 @@ type Message struct {
 }
 
 type Chat struct {
-	MGID     string
-	WAClient string
-	TGChatID int64
+	MGID       string
+	WAClient   string
+	TGChatID   int64
+	TGUserName string
 }
 
 type MainGroup struct {

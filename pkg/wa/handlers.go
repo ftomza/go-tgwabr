@@ -112,6 +112,7 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 	if chat != nil {
 		chatID = chat.TGChatID
 		msg.Chatted = api.ChattedYes
+		msg.TGUserName = chat.TGUserName
 	} else if info.FromMe {
 		return
 	}
@@ -175,11 +176,15 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 	msg.TGChatID = tgMsg.ChatID
 	msg.TGMessageID = tgMsg.MessageID
 	msg.TGTimestamp = tgMsg.Timestamp
-	msg.TGUserName = tgMsg.UserName
 	msg.TGFwdMessageID = tgMsg.FwdMessageID
 	msg.Direction = api.DirectionWa2tg
 
 	if doSave {
+		err = s.ReadMessage(msg.WAClient, msg.WAMessageID)
+		if err != nil {
+			log.Println("Error read message: ", err)
+		}
+
 		err = db.SaveMessage(msg)
 		if err != nil {
 			log.Println("Save store error: ", err)
