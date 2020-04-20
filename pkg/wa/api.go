@@ -104,7 +104,8 @@ func (s *Instance) ClientExist(client string) bool {
 	_, ok := s.conn.Store.Contacts[jid]
 	if !ok {
 		ok = pkg.StringInSlice(jid, s.clients)
-	} else {
+	}
+	if !ok {
 		ch, err := s.conn.Exist(jid)
 		if err == nil {
 			status := <-ch
