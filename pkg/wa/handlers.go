@@ -178,6 +178,9 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 	msg.TGTimestamp = tgMsg.Timestamp
 	msg.TGFwdMessageID = tgMsg.FwdMessageID
 	msg.Direction = api.DirectionWa2tg
+	if msg.TGUserName == "" {
+		msg.TGUserName = tgMsg.UserName
+	}
 
 	if doSave {
 		err = s.ReadMessage(msg.WAClient, msg.WAMessageID)
