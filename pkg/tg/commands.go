@@ -15,6 +15,50 @@ import (
 	tgBotApi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
+func (s *Service) CommandSync(update tgBotApi.Update) {
+	chatID := update.Message.Chat.ID
+
+	msg := tgBotApi.NewMessage(chatID, "")
+	defer func() {
+		if msg.Text != "" {
+			s.BotSend(msg)
+		}
+	}()
+
+	if !s.IsMainGroup(chatID) {
+		msg.Text = "Command work only 'Main group'"
+		return
+	}
+
+	waSvc, ok := context.FromWA(s.ctx)
+	if !ok {
+		msg.Text = "Module WhatsApp not ready"
+		return
+	}
+
+	wac, ok := waSvc.GetInstance(chatID)
+	if !ok {
+		msg.Text = "Instance WhatsApp not ready"
+		return
+	}
+
+	if ok, err := wac.SyncContacts(); err != nil {
+		msg.Text = fmt.Sprintf("Sync contact ERROR: %s", err.Error())
+	} else if ok {
+		msg.Text = fmt.Sprintf("Sync contact OK")
+	} else {
+		msg.Text = fmt.Sprintf("Sync contact BAD")
+	}
+
+	if ok, err := wac.SyncChats(); err != nil {
+		msg.Text = fmt.Sprintf("%s, Sync chat ERROR: %s", msg.Text, err.Error())
+	} else if ok {
+		msg.Text = fmt.Sprintf("%s, Sync chat OK", msg.Text)
+	} else {
+		msg.Text = fmt.Sprintf("%s, Sync chat BAD", msg.Text)
+	}
+}
+
 func (s *Service) CommandCheckClient(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID

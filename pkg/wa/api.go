@@ -11,6 +11,8 @@ import (
 	"tgwabr/pkg"
 	"time"
 
+	"github.com/Rhymen/go-whatsapp/binary"
+
 	"github.com/Rhymen/go-whatsapp"
 	waproto "github.com/Rhymen/go-whatsapp/binary/proto"
 )
@@ -476,6 +478,97 @@ func (s *Instance) PrepareClientJID(client string) string {
 
 func (s *Instance) GetID() string {
 	return fmt.Sprintf("%d", s.id)
+}
+
+func (s *Instance) SyncContacts() (bool, error) {
+	node, err := s.conn.Contacts()
+	if err != nil {
+		log.Println("WAInstance SyncContact error: ", err)
+		return false, err
+	}
+
+	if node == nil {
+		log.Println("WAInstance SyncContact node is empty")
+		return false, nil
+	}
+
+	if !(node.Description == "response" && node.Attributes["type"] == "contacts") {
+		log.Println("WAInstance SyncContact node not type contacts, response type: ", node.Attributes["type"])
+		return false, nil
+	}
+
+	c, ok := node.Content.([]interface{})
+	if !ok {
+		log.Println("WAInstance SyncContact node content not Array")
+		return false, nil
+	}
+
+	var contactList []whatsapp.Contact
+	for _, contact := range c {
+		contactNode, ok := contact.(binary.Node)
+		if !ok {
+			continue
+		}
+
+		jid := strings.Replace(contactNode.Attributes["jid"], "@c.us", "@s.whatsapp.net", 1)
+		s.conn.Store.Contacts[jid] = whatsapp.Contact{
+			Jid:    jid,
+			Notify: contactNode.Attributes["notify"],
+			Name:   contactNode.Attributes["name"],
+			Short:  contactNode.Attributes["short"],
+		}
+		contactList = append(contactList, s.conn.Store.Contacts[jid])
+	}
+
+	s.HandleContactList(contactList)
+
+	return true, nil
+}
+
+func (s *Instance) SyncChats() (bool, error) {
+	node, err := s.conn.Chats()
+	if err != nil {
+		log.Println("WAInstance SyncChats error: ", err)
+		return false, err
+	}
+
+	if node == nil {
+		log.Println("WAInstance SyncChats node is empty")
+		return false, nil
+	}
+
+	if !(node.Description == "response" && node.Attributes["type"] == "chat") {
+		log.Println("WAInstance SyncChats node not type chat, response type: ", node.Attributes["type"])
+		return false, nil
+	}
+
+	c, ok := node.Content.([]interface{})
+	if !ok {
+		log.Println("WAInstance SyncChats node content not Array")
+		return false, nil
+	}
+	var chatList []whatsapp.Chat
+	for _, contact := range c {
+		chatNode, ok := contact.(binary.Node)
+		if !ok {
+			continue
+		}
+
+		jid := strings.Replace(chatNode.Attributes["jid"], "@c.us", "@s.whatsapp.net", 1)
+		s.conn.Store.Chats[jid] = whatsapp.Chat{
+			Jid:             jid,
+			Name:            chatNode.Attributes["name"],
+			Unread:          chatNode.Attributes["count"],
+			LastMessageTime: chatNode.Attributes["t"],
+			IsMuted:         chatNode.Attributes["mute"],
+			IsMarkedSpam:    chatNode.Attributes["spam"],
+		}
+		chatList = append(chatList, s.conn.Store.Chats[jid])
+	}
+
+	s.HandleChatList(chatList)
+
+	return true, nil
 }
 
 func (s *Instance) sendStatusReady() {

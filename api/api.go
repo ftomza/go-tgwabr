@@ -110,6 +110,8 @@ type WAInstance interface {
 	GetShortClient(client string) string
 	PrepareClientJID(client string) string
 	GetID() string
+	SyncContacts() (bool, error)
+	SyncChats() (bool, error)
 }
 
 type TG interface {

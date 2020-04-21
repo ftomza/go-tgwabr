@@ -256,7 +256,6 @@ func (s *Instance) HandleContactList(contacts []whatsapp.Contact) {
 	} else {
 		s.status.ContactsLoad.Desc = "Receive empty"
 	}
-	s.sendStatusReady()
 }
 
 func (s *Instance) HandleChatList(chats []whatsapp.Chat) {
