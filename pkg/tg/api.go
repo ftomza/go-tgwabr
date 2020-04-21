@@ -211,3 +211,7 @@ func (s *Service) UpdateStatMessage() {
 
 func (s *Service) SendLog(text string) {
 }
+
+func (s *Service) GetMainGroups() []int64 {
+	return s.mainGroups
+}

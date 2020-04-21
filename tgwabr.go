@@ -47,6 +47,10 @@ func Init() func() {
 	waImpl.UpdateCTX(ctx)
 	tgImpl.UpdateCTX(ctx)
 
+	for _, v := range tgImpl.GetMainGroups() {
+		_, _ = tgImpl.SendMessage(v, "Bot start! Please wait all sync! Check /status")
+	}
+
 	return func() {
 		if err = waImpl.ShutDown(); err != nil {
 			log.Println("Fail WAInstance Instance: ", err)

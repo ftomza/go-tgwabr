@@ -135,7 +135,7 @@ func (s *Instance) GetClientName(client string) string {
 		return v.Name
 	} else {
 		if !pkg.StringInSlice(client, s.clients) {
-			return "Not Exist"
+			return "Not Sync"
 		} else {
 			return "New Client"
 		}

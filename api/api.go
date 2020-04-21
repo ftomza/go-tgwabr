@@ -123,6 +123,7 @@ type TG interface {
 	DeleteMessage(chatID int64, messageID int) (err error)
 	UpdateStatMessage()
 	SendLog(text string)
+	GetMainGroups() []int64
 }
 
 type Store interface {

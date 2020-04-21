@@ -55,10 +55,6 @@ func New(ctx context.Context) (service *Service, err error) {
 
 	go service.mainLoop(updates)
 
-	for _, v := range service.mainGroups {
-		_, _ = service.SendMessage(v, "Bot start! Please wait all sync! Check /status")
-	}
-
 	return
 }
 
