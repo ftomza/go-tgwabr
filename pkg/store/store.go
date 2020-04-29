@@ -175,7 +175,7 @@ func New(ctx context.Context) (store *Store, err error) {
 
 	urn := name + "_main.db"
 	if dialect == "mysql" {
-		urn = fmt.Sprintf("%s:%s@/%s?charset=utf8&parseTime=True&loc=Local", user, pass, db)
+		urn = fmt.Sprintf("%s:%s@/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, db)
 	}
 	store.db, err = gorm.Open(dialect, urn)
 	if err != nil {

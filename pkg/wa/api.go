@@ -499,7 +499,7 @@ func (s *Instance) SyncContacts() (bool, error) {
 
 	c, ok := node.Content.([]interface{})
 	if !ok {
-		log.Println("WAInstance SyncContact node content not Array")
+		log.Printf("WAInstance SyncContact node content not Array %v\n", node.Content)
 		return false, nil
 	}
 
@@ -544,7 +544,7 @@ func (s *Instance) SyncChats() (bool, error) {
 
 	c, ok := node.Content.([]interface{})
 	if !ok {
-		log.Println("WAInstance SyncChats node content not Array")
+		log.Printf("WAInstance SyncChats node content not Array %v\n", node.Content)
 		return false, nil
 	}
 	var chatList []whatsapp.Chat

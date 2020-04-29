@@ -794,12 +794,15 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 			log.Println("Error transfer message: ", err)
 		}
 
-		tgMsg := Message(resp).ToAPIMessage()
-		v.TGChatID = tgMsg.ChatID
-		v.TGMessageID = tgMsg.MessageID
-		v.TGTimestamp = tgMsg.Timestamp
+		if resp.Chat != nil {
+			tgMsg := Message(resp).ToAPIMessage()
+			v.TGChatID = tgMsg.ChatID
+			v.TGMessageID = tgMsg.MessageID
+			v.TGTimestamp = tgMsg.Timestamp
+			v.TGFwdMessageID = tgMsg.FwdMessageID
+		}
+
 		v.TGUserName = userName
-		v.TGFwdMessageID = tgMsg.FwdMessageID
 		v.Chatted = api.ChattedYes
 
 		err = db.SaveMessage(v)
