@@ -86,6 +86,8 @@ func (a Message) ToAPIMessage() *api.TGMessage {
 
 func (s *Service) BotSend(msg tgbotapi.Chattable) (response tgbotapi.Message, err error) {
 
+	tooMany := "Too Many Requests: retry after "
+
 	for {
 		response, err = s.bot.Send(msg)
 		if err == nil {
@@ -98,6 +100,13 @@ func (s *Service) BotSend(msg tgbotapi.Chattable) (response tgbotapi.Message, er
 				continue
 			} else {
 				log.Println("Error TG by Error: ", tgErr.Message, tgErr.RetryAfter)
+			}
+		} else if strings.Contains(err.Error(), tooMany) {
+			valStr := strings.ReplaceAll(err.Error(), tooMany, "")
+			sec, err := strconv.Atoi(strings.TrimSpace(valStr))
+			if err == nil {
+				time.Sleep(time.Second * time.Duration(sec))
+				continue
 			}
 		}
 		break
