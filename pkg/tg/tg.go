@@ -2,12 +2,14 @@ package tg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"tgwabr/api"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -82,9 +84,23 @@ func (a Message) ToAPIMessage() *api.TGMessage {
 	return item
 }
 
-func (s *Service) BotSend(msg tgbotapi.Chattable) (response tgbotapi.Message) {
-	var err error
-	response, err = s.bot.Send(msg)
+func (s *Service) BotSend(msg tgbotapi.Chattable) (response tgbotapi.Message, err error) {
+
+	for {
+		response, err = s.bot.Send(msg)
+		if err == nil {
+			break
+		}
+		var tgErr *tgbotapi.Error
+		if errors.As(err, tgErr) {
+			if strings.Contains(tgErr.Message, "Too Many Requests") && tgErr.RetryAfter != 0 {
+				time.Sleep(time.Second * time.Duration(tgErr.RetryAfter))
+				continue
+			}
+		}
+		break
+	}
+
 	if err != nil {
 		log.Println("Error TG Send: ", err)
 	}

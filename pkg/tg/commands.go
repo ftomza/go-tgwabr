@@ -21,7 +21,7 @@ func (s *Service) CommandSync(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -788,7 +788,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 		if err != nil {
 			log.Println("Error transfer message: ", err)
 		}
-		resp := s.BotSend(msgTransfer)
+		resp, err := s.BotSend(msgTransfer)
 		err = s.DeleteMessage(v.TGChatID, v.TGMessageID)
 		if err != nil {
 			log.Println("Error transfer message: ", err)

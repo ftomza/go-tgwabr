@@ -23,7 +23,7 @@ func (s *Service) SendQR(mgChatID int64, code string) (msg *api.TGMessage, err e
 		Bytes: png,
 	}
 	req := tgbotapi.NewPhotoUpload(mgChatID, qrFile)
-	response, err := s.bot.Send(req)
+	response, err := s.BotSend(req)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *Service) SendQR(mgChatID int64, code string) (msg *api.TGMessage, err e
 func (s *Service) SendMessage(chatID int64, text string) (msg *api.TGMessage, err error) {
 
 	req := tgbotapi.NewMessage(chatID, text)
-	response, err := s.bot.Send(req)
+	response, err := s.BotSend(req)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (s *Service) SendImage(chatID int64, reader io.Reader, caption string) (msg
 		Reader: reader,
 		Size:   -1,
 	})
-	response, err := s.bot.Send(req)
+	response, err := s.BotSend(req)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *Service) SendAudio(chatID int64, reader io.Reader) (msg *api.TGMessage,
 		Reader: reader,
 		Size:   -1,
 	})
-	response, err := s.bot.Send(req)
+	response, err := s.BotSend(req)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (s *Service) SendVideo(chatID int64, reader io.Reader) (msg *api.TGMessage,
 		Reader: reader,
 		Size:   -1,
 	})
-	response, err := s.bot.Send(req)
+	response, err := s.BotSend(req)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *Service) SendDocument(chatID int64, reader io.Reader, fileName string) 
 		Reader: reader,
 		Size:   -1,
 	})
-	response, err := s.bot.Send(req)
+	response, err := s.BotSend(req)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (s *Service) SendDocument(chatID int64, reader io.Reader, fileName string) 
 
 func (s *Service) SendLocation(chatID int64, lat, lon float64) (msg *api.TGMessage, err error) {
 	req := tgbotapi.NewLocation(chatID, lat, lon)
-	response, err := s.bot.Send(req)
+	response, err := s.BotSend(req)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (s *Service) UpdateStatMessage() {
 
 		if grp.MessagePin > 0 && txt != "" {
 			msg := tgbotapi.NewEditMessageText(v, grp.MessagePin, txt)
-			_, err = s.bot.Send(msg)
+			_, err = s.BotSend(msg)
 			if err != nil && strings.Contains(err.Error(), "Bad Request: message to edit not found") {
 				grp.MessagePin = -1
 			}
@@ -193,7 +193,7 @@ func (s *Service) UpdateStatMessage() {
 		}
 		if grp.MessagePin < 1 && txt != "" {
 			msg := tgbotapi.NewMessage(v, txt)
-			resp, err := s.bot.Send(msg)
+			resp, err := s.BotSend(msg)
 			if err == nil {
 				grp.MessagePin = resp.MessageID
 				err = db.SaveMainGroup(grp)
