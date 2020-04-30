@@ -53,7 +53,7 @@ func (s *Service) HandleTextMessage(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -178,6 +178,6 @@ func (s *Service) HandleCommand(update tgbotapi.Update) {
 	case "sync":
 		s.CommandSync(update)
 	default:
-		s.BotSend(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Command '%s' not implement", update.Message.Command())))
+		_, _ = s.BotSend(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Command '%s' not implement", update.Message.Command())))
 	}
 }

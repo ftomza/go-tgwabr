@@ -66,7 +66,7 @@ func (s *Service) CommandCheckClient(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -126,7 +126,7 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 		if err != nil {
 			s.SendLog(err.Error())
@@ -210,7 +210,7 @@ func (s *Service) CommandSet(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -267,7 +267,7 @@ func (s *Service) CommandSetLogger(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -334,7 +334,7 @@ func (s *Service) CommandStatus(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -404,7 +404,7 @@ func (s *Service) CommandHistory(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -469,7 +469,7 @@ func (s *Service) CommandLogin(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -507,7 +507,7 @@ func (s *Service) CommandAlias(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -576,7 +576,7 @@ func (s *Service) CommandLogout(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -616,7 +616,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -749,7 +749,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 	}
 
 	msgJoin := tgBotApi.NewMessage(mgChatID, fmt.Sprintf("Chat %s(%s) join to @%s", name, client, update.Message.From.UserName))
-	s.BotSend(msgJoin)
+	_, _ = s.BotSend(msgJoin)
 
 	_, _ = s.bot.SetChatTitle(tgBotApi.SetChatTitleConfig{
 		ChatID: chat.TGChatID,
@@ -788,7 +788,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 		if err != nil {
 			log.Println("Error transfer message: ", err)
 		}
-		resp, err := s.BotSend(msgTransfer)
+		resp, _ := s.BotSend(msgTransfer)
 		err = s.DeleteMessage(v.TGChatID, v.TGMessageID)
 		if err != nil {
 			log.Println("Error transfer message: ", err)
@@ -823,7 +823,7 @@ func (s *Service) CommandLeave(update tgBotApi.Update) {
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
-			s.BotSend(msg)
+			_, _ = s.BotSend(msg)
 		}
 	}()
 
@@ -867,7 +867,7 @@ func (s *Service) CommandLeave(update tgBotApi.Update) {
 		}
 		txt = txt + fmt.Sprintf(" - '%s(%s)' OK\n", name, v.WAClient)
 		msgJoin := tgBotApi.NewMessage(mgChatID, fmt.Sprintf("@%s leave chat %s(%s)", update.Message.From.UserName, name, wac.GetShortClient(v.WAClient)))
-		s.BotSend(msgJoin)
+		_, _ = s.BotSend(msgJoin)
 	}
 	msg.Text = txt
 
