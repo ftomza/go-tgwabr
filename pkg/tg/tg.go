@@ -92,10 +92,12 @@ func (s *Service) BotSend(msg tgbotapi.Chattable) (response tgbotapi.Message, er
 			break
 		}
 		var tgErr *tgbotapi.Error
-		if errors.As(err, tgErr) {
+		if errors.As(err, &tgErr) {
 			if strings.Contains(tgErr.Message, "Too Many Requests") && tgErr.RetryAfter != 0 {
 				time.Sleep(time.Second * time.Duration(tgErr.RetryAfter))
 				continue
+			} else {
+				log.Println("Error TG by Error: ", tgErr.Message, tgErr.RetryAfter)
 			}
 		}
 		break
