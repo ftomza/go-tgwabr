@@ -569,6 +569,74 @@ func (s *Service) CommandAlias(update tgBotApi.Update) {
 	msg.Text = fmt.Sprintf("Client '%s' save as '%s'", client, aliasName)
 }
 
+func (s *Service) CommandContact(update tgBotApi.Update) {
+
+	chatID := update.Message.Chat.ID
+
+	msg := tgBotApi.NewMessage(chatID, "")
+	defer func() {
+		if msg.Text != "" {
+			_, _ = s.BotSend(msg)
+		}
+	}()
+
+	if !s.IsMainGroup(chatID) {
+		msg.Text = "Command work only 'Main group'"
+		return
+	}
+
+	waSvc, ok := context.FromWA(s.ctx)
+	if !ok {
+		msg.Text = "Module WhatsApp not ready"
+		return
+	}
+
+	wac, ok := waSvc.GetInstance(chatID)
+	if !ok {
+		msg.Text = "Instance WhatsApp not ready"
+		return
+	}
+
+	db, ok := context.FromDB(s.ctx)
+	if !ok {
+		msg.Text = "Module Store not ready"
+		return
+	}
+
+	args := update.Message.CommandArguments()
+	args = strings.ToLower(strings.TrimSpace(args))
+
+	client, contactName := s.prepareArgs(args)
+	client = s.prepareClient(client)
+	if client == "" {
+		msg.Text = "Client not set"
+		return
+	}
+	if contactName == "" {
+		msg.Text = "Contact name not set"
+		return
+	}
+
+	if !wac.ClientExist(client) {
+		msg.Text = fmt.Sprintf("Client '%s' not found", client)
+		return
+	}
+
+	contact := &api.Contact{
+		Phone: client,
+		Name:  contactName,
+	}
+
+	err := db.SaveContact(contact)
+	if err != nil {
+		msg.Text = fmt.Sprintf("Fail save alias '%s' - '%s', please send admin this error: %s", client, contactName, err)
+		log.Println("Error save chat store: ", err)
+		return
+	}
+
+	msg.Text = fmt.Sprintf("Client '%s' save as '%s'", client, contactName)
+}
+
 func (s *Service) CommandLogout(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID

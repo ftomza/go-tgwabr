@@ -253,6 +253,26 @@ func (s *Instance) HandleContactList(contacts []whatsapp.Contact) {
 	if len(contacts) > 0 {
 		s.status.ContactsLoad.Desc = fmt.Sprintf("Load: %d", len(contacts))
 		s.sendStatusReady()
+		db, ok := appCtx.FromDB(s.ctx)
+		if !ok {
+			log.Println("Store not ready")
+			return
+		}
+		for _, v := range contacts {
+			phone, tp := s.PartsClientJID(v.Jid)
+			if tp == "g.us" {
+				continue
+			}
+			err := db.SaveContact(&api.Contact{
+				Phone:     phone,
+				WAClient:  v.Jid,
+				Name:      v.Name,
+				ShortName: v.Short,
+			})
+			if err != nil {
+				log.Println("Sync Store contacts error: ", err)
+			}
+		}
 	} else {
 		s.status.ContactsLoad.Desc = "Receive empty"
 	}

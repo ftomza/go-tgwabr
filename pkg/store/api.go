@@ -240,3 +240,39 @@ func (s *Store) GetAliasesByName(name string) (apiItems []*api.Alias, err error)
 	}
 	return items.ToAPIAliases(), nil
 }
+
+func (s *Store) SaveContact(contact *api.Contact) (err error) {
+
+	item := &Contact{}
+	_, err = s.FindOne(s.db.Model(&Contact{}).Where(&Contact{Phone: contact.WAClient}), item)
+	if err != nil {
+		return err
+	}
+	id := item.ID
+	item = APIContact(*contact).ToContact()
+	item.ID = id
+	err = s.db.Save(item).Error
+	if err != nil {
+		return err
+	}
+	return
+}
+
+func (s *Store) GetContactsByPhone(phone string) (apiItems []*api.Contact, err error) {
+
+	items := Contacts{}
+	err = s.db.Model(&Contact{}).Find(&items, &Contact{Phone: phone}).Error
+	if err != nil {
+		return
+	}
+	return items.ToAPIContacts(), nil
+}
+func (s *Store) GetContactsByWAClient(waClient string) (apiItems []*api.Contact, err error) {
+
+	items := Contacts{}
+	err = s.db.Model(&Contact{}).Find(&items, &Contact{WAClient: waClient}).Error
+	if err != nil {
+		return
+	}
+	return items.ToAPIContacts(), nil
+}

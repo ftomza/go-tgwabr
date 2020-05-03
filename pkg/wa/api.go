@@ -129,18 +129,36 @@ func (s *Instance) GetShortClient(client string) string {
 }
 
 func (s *Instance) GetClientName(client string) string {
-	v, ok := s.conn.Store.Contacts[s.PrepareClientJID(client)]
+	jid := s.PrepareClientJID(client)
+	v, ok := s.conn.Store.Contacts[jid]
 	if ok {
 		if v.Name == "" {
 			return v.Short
 		}
 		return v.Name
-	} else {
-		if !pkg.StringInSlice(client, s.clients) {
-			return "Not Sync"
-		} else {
-			return "New Client"
+	}
+
+	db, ok := appCtx.FromDB(s.ctx)
+	if ok {
+		items, err := db.GetContactsByWAClient(jid)
+		if err != nil {
+			log.Println("Get contact error: ", err)
 		}
+		if len(items) != 0 {
+			itm := items[0]
+			if itm.Name == "" {
+				return itm.ShortName
+			}
+			return itm.Name
+		}
+	} else {
+		log.Println("Store not ready")
+	}
+
+	if !pkg.StringInSlice(client, s.clients) {
+		return "Not Sync"
+	} else {
+		return "New Client"
 	}
 }
 
@@ -474,6 +492,14 @@ func (s *Instance) PrepareClientJID(client string) string {
 		jidPrefix = "g.us"
 	}
 	return fmt.Sprintf("%s@%s", client, jidPrefix)
+}
+
+func (s *Instance) PartsClientJID(jid string) (string, string) {
+	if strings.Count(jid, "@") > 0 {
+		parts := strings.Split(jid, "@")
+		return parts[0], parts[1]
+	}
+	return "", ""
 }
 
 func (s *Instance) GetID() string {

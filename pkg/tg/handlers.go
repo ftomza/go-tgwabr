@@ -177,6 +177,8 @@ func (s *Service) HandleCommand(update tgbotapi.Update) {
 		s.CommandSetLogger(update)
 	case "sync":
 		s.CommandSync(update)
+	case "contact":
+		s.CommandContact(update)
 	default:
 		_, _ = s.BotSend(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Command '%s' not implement", update.Message.Command())))
 	}

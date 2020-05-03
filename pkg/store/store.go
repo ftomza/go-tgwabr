@@ -61,6 +61,17 @@ type Alias struct {
 	Name     string `gorm:"index"`
 }
 
+type Contact struct {
+	gorm.Model
+
+	Phone     string
+	Email     string
+	WAClient  string `gorm:"index"`
+	TGUserID  int    `gorm:"index"`
+	Name      string `gorm:"index"`
+	ShortName string
+}
+
 type APIMessage api.Message
 
 func (a APIMessage) ToMessage() *Message {
@@ -157,6 +168,30 @@ func (a Aliases) ToAPIAliases() []*api.Alias {
 	return list
 }
 
+type APIContact api.Contact
+
+func (a APIContact) ToContact() *Contact {
+	item := &Contact{}
+	pkg.MustCopyValue(item, &a)
+	return item
+}
+
+func (a Contact) ToAPIContact() *api.Contact {
+	item := &api.Contact{}
+	pkg.MustCopyValue(item, &a)
+	return item
+}
+
+type Contacts []*Contact
+
+func (a Contacts) ToAPIContacts() []*api.Contact {
+	list := make([]*api.Contact, len(a))
+	for i, item := range a {
+		list[i] = item.ToAPIContact()
+	}
+	return list
+}
+
 type Store struct {
 	ctx context.Context
 	db  *gorm.DB
@@ -195,6 +230,7 @@ func New(ctx context.Context) (store *Store, err error) {
 	store.db.AutoMigrate(&Message{})
 	store.db.AutoMigrate(&MainGroup{})
 	store.db.AutoMigrate(&Alias{})
+	store.db.AutoMigrate(&Contact{})
 
 	return
 }

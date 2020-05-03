@@ -85,6 +85,15 @@ type Alias struct {
 	Name     string
 }
 
+type Contact struct {
+	Phone     string
+	Email     string
+	WAClient  string
+	TGUserID  int
+	Name      string
+	ShortName string
+}
+
 type WA interface {
 	GetInstance(id int64) (WAInstance, bool)
 }
@@ -109,6 +118,7 @@ type WAInstance interface {
 	GetContactPhoto(client string) (result string, err error)
 	GetShortClient(client string) string
 	PrepareClientJID(client string) string
+	PartsClientJID(jid string) (string, string)
 	GetID() string
 	SyncContacts() (bool, error)
 	SyncChats() (bool, error)
@@ -145,6 +155,9 @@ type Store interface {
 	GetNotChatted(mgID int64, botName string) (apiItems []*StatDay, err error)
 	SaveAlias(alias *Alias) (err error)
 	GetAliasesByName(name string) (apiItems []*Alias, err error)
+	SaveContact(contact *Contact) (err error)
+	GetContactsByPhone(phone string) (apiItems []*Contact, err error)
+	GetContactsByWAClient(waClient string) (apiItems []*Contact, err error)
 }
 
 type Cache interface {
