@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Arman92/go-tdlib v0.0.0-20200306211512-7c3765667115
-	github.com/Rhymen/go-whatsapp v0.1.1-0.20200421062035-31e8111ac334
+	github.com/Rhymen/go-whatsapp v0.1.1-0.20200429202648-5e33cb4ac551
 	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
