@@ -59,6 +59,44 @@ func (s *Service) CommandSync(update tgBotApi.Update) {
 	}
 }
 
+func (s *Service) CommandRePined(update tgBotApi.Update) {
+	chatID := update.Message.Chat.ID
+
+	msg := tgBotApi.NewMessage(chatID, "")
+	defer func() {
+		if msg.Text != "" {
+			_, _ = s.BotSend(msg)
+		}
+	}()
+
+	if !s.IsMainGroup(chatID) {
+		msg.Text = "Command work only 'Main group'"
+		return
+	}
+
+	db, ok := context.FromDB(s.ctx)
+	if !ok {
+		msg.Text = "Module Store not ready"
+		return
+	}
+
+	grp, err := db.GetMainGroupByTGID(chatID)
+	if err != nil {
+		log.Println("Error get MainGroup updateStatMessage: ", err)
+		return
+	}
+
+	if grp == nil {
+		log.Println("Error get MainGroup not found: ", chatID)
+		return
+	}
+
+	grp.MessagePin = -1
+	_ = db.SaveMainGroup(grp)
+
+	s.UpdateStatMessage()
+}
+
 func (s *Service) CommandCheckClient(update tgBotApi.Update) {
 
 	chatID := update.Message.Chat.ID

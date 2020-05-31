@@ -244,7 +244,7 @@ func (s *Store) GetAliasesByName(name string) (apiItems []*api.Alias, err error)
 func (s *Store) SaveContact(contact *api.Contact) (err error) {
 
 	item := &Contact{}
-	_, err = s.FindOne(s.db.Model(&Contact{}).Where(&Contact{Phone: contact.WAClient}), item)
+	_, err = s.FindOne(s.db.Model(&Contact{}).Where(&Contact{Phone: contact.Phone}), item)
 	if err != nil {
 		return err
 	}
