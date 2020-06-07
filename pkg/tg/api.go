@@ -170,7 +170,7 @@ func (s *Service) UpdateStatMessage() {
 		}
 
 		if grp.MessagePin > 0 && txt != "" {
-			msg := tgbotapi.NewEditMessageText(v, grp.MessagePin, txt)
+			msg := tgbotapi.NewEditMessageText(v, grp.MessagePin, txt+"\n #pinstat")
 			_, err = s.BotSend(msg)
 			if err != nil && strings.Contains(err.Error(), "Bad Request: message to edit not found") {
 				grp.MessagePin = -1
@@ -192,7 +192,7 @@ func (s *Service) UpdateStatMessage() {
 			}
 		}
 		if grp.MessagePin < 1 && txt != "" {
-			msg := tgbotapi.NewMessage(v, txt)
+			msg := tgbotapi.NewMessage(v, txt+"\n #pinstat")
 			resp, err := s.BotSend(msg)
 			if err == nil {
 				grp.MessagePin = resp.MessageID

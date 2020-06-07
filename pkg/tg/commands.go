@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,6 +15,48 @@ import (
 
 	tgBotApi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
+
+func (s *Service) CommandRestart(update tgBotApi.Update) {
+	chatID := update.Message.Chat.ID
+
+	msg := tgBotApi.NewMessage(chatID, "")
+	defer func() {
+		if msg.Text != "" {
+			msg.Text = msg.Text + "\n #restart"
+			_, _ = s.BotSend(msg)
+		}
+	}()
+
+	if !s.IsMainGroup(chatID) {
+		msg.Text = "Command work only 'Main group'"
+		return
+	}
+
+	msg.Text = "Service restarted..."
+	os.Exit(0)
+}
+
+func (s *Service) CommandAutoReplay(update tgBotApi.Update) {
+	chatID := update.Message.Chat.ID
+
+	msg := tgBotApi.NewMessage(chatID, "")
+	defer func() {
+		if msg.Text != "" {
+			_, _ = s.BotSend(msg)
+		}
+	}()
+
+	if !s.IsMainGroup(chatID) {
+		msg.Text = "Command work only 'Main group'"
+		return
+	}
+
+	///autoreplay
+	//*;
+	//17:30-8:00|1-7|*|*;
+	//Hello!
+
+}
 
 func (s *Service) CommandSync(update tgBotApi.Update) {
 	chatID := update.Message.Chat.ID
