@@ -1,6 +1,8 @@
 package tg
 
 import (
+	"bufio"
+	"encoding/csv"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -272,14 +274,42 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 		items = append(items, res...)
 	}
 	txt := ""
+	if len(items) > 0 {
+		txt = "Complete"
+	}
+	records := [][]string{
+		{"DateAt", "UserName", "WAName", "Count"},
+	}
 	for _, v := range items {
 		if v == nil {
 			continue
 		}
-		txt = fmt.Sprintf("%s\n%s;%s;%s;%d", txt, v.Date.Format("2006-01-02"), v.TGUserName, v.WAName, v.Count)
+		records = append(records, []string{
+			v.Date.Format("2006-01-02"), v.TGUserName, v.WAName, fmt.Sprintf("%d", v.Count),
+		})
 	}
 	if txt == "" {
 		txt = "Stat not found from period"
+	} else {
+		br := new(bufio.ReadWriter)
+		w := csv.NewWriter(br)
+		w.UseCRLF = true
+		err = w.WriteAll(records)
+
+		if err != nil {
+			msg.Text = fmt.Sprintf("Error writing csv, please send admin this error: %s", err)
+			return
+		}
+		req := tgBotApi.NewDocumentUpload(chatID, tgBotApi.FileReader{
+			Name:   fmt.Sprintf("Stat_%s-%s.csv", dateStart.Format("2006-01-02"), dateEnd.Format("2006-01-02")),
+			Reader: br,
+			Size:   -1,
+		})
+		_, err = s.BotSend(req)
+		if err != nil {
+			msg.Text = fmt.Sprintf("Error send csv, please send admin this error: %s", err)
+			return
+		}
 	}
 	msg.Text = txt
 }
