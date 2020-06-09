@@ -1,7 +1,7 @@
 package tg
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"io/ioutil"
@@ -291,7 +291,7 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 	if txt == "" {
 		txt = "Stat not found from period"
 	} else {
-		br := new(bufio.ReadWriter)
+		br := new(bytes.Buffer)
 		w := csv.NewWriter(br)
 		w.UseCRLF = true
 		err = w.WriteAll(records)
