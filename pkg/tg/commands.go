@@ -992,6 +992,10 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 
 	msg.Text = fmt.Sprintf("Join '%s(%s)' OK", name, client)
 	s.UpdateStatMessage()
+	err = wac.GetHistory(client, 5)
+	if err != nil {
+		log.Println("Error get History: ", err)
+	}
 }
 
 func (s *Service) CommandLeave(update tgBotApi.Update) {
