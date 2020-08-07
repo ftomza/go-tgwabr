@@ -134,6 +134,7 @@ func (s *Service) HandleTextMessage(update tgbotapi.Update) {
 	item.WAName = resp.Name
 	item.WAFwdMessageID = resp.FwdMessageID
 	item.WATimestamp = resp.Timestamp
+	item.Session = chat.Session
 
 	err = db.SaveMessage(item)
 	if err != nil {
