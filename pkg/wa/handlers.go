@@ -113,6 +113,7 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 		chatID = chat.TGChatID
 		msg.Chatted = api.ChattedYes
 		msg.TGUserName = chat.TGUserName
+		msg.Session = chat.Session
 	} else if info.FromMe {
 		return
 	}

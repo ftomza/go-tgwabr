@@ -13,6 +13,7 @@ import (
 	"strings"
 	"tgwabr/api"
 	"tgwabr/context"
+	"tgwabr/pkg"
 	"time"
 
 	tgBotApi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -905,6 +906,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 		WAClient:   wac.PrepareClientJID(client),
 		TGChatID:   chatID,
 		TGUserName: userName,
+		Session:    pkg.MustUUID(),
 	}
 
 	items, err := db.GetChatsByChatID(chat.TGChatID)
@@ -983,7 +985,8 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 
 		v.TGUserName = userName
 		v.Chatted = api.ChattedYes
-
+		v.Answered = uint64(time.Now().Unix() - int64(v.WATimestamp))
+		v.Session = chat.Session
 		err = db.SaveMessage(v)
 		if err != nil {
 			log.Println("Error save transfer message store: ", err)

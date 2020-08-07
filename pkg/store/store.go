@@ -29,6 +29,7 @@ type Chat struct {
 	WAClient   string `gorm:"index"`
 	TGChatID   int64  `gorm:"index"`
 	TGUserName string
+	Session    string
 }
 
 type Message struct {
@@ -49,8 +50,10 @@ type Message struct {
 	TGFwdMessageID int    `gorm:"index"`
 	Direction      string `gorm:"index"`
 	Chatted        string `gorm:"index"`
+	Answered       uint64
 	MessageStatus  int
 	Text           string
+	Session        string `gorm:"index"`
 }
 
 type Alias struct {

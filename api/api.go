@@ -46,8 +46,10 @@ type Message struct {
 	TGFwdChatID    int64
 	Direction      string
 	Chatted        string
+	Answered       uint64
 	MessageStatus  int
 	Text           string
+	Session        string
 }
 
 type Chat struct {
@@ -55,6 +57,7 @@ type Chat struct {
 	WAClient   string
 	TGChatID   int64
 	TGUserName string
+	Session    string
 }
 
 type MainGroup struct {
