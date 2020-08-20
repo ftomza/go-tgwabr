@@ -296,7 +296,7 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 		}
 		waName := v.WAName
 		if waName == "" {
-			waName, _ = wa.Instance{}.PartsClientJID(v.WAClient)
+			waName, _ = (&wa.Instance{}).PartsClientJID(v.WAClient)
 		}
 		records = append(records, []string{
 			v.Date.Format("2006-01-02"), v.TGUserName, v.WAName, sess, answered, fmt.Sprintf("%d", v.CountIn), fmt.Sprintf("%d", v.CountOut),
