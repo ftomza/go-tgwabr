@@ -154,7 +154,7 @@ func (s *Store) GetStatOnPeriod(mgChatID int64, userName string, start, end time
 	if userName != "" {
 		q = q.Where("tg_user_name = ?", userName)
 	}
-	q = q.Group("date(created_at), tg_user_name, session, wa_name").
+	q = q.Group("date(created_at), tg_user_name, session, wa_name, wa_client").
 		Order("date").
 		Order("tg_user_name").
 		Order("wa_client").

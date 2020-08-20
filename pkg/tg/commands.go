@@ -299,7 +299,7 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 			waName = parts[0]
 		}
 		records = append(records, []string{
-			v.Date.Format("2006-01-02"), v.TGUserName, v.WAName, sess, answered, fmt.Sprintf("%d", v.CountIn), fmt.Sprintf("%d", v.CountOut),
+			v.Date.Format("2006-01-02"), v.TGUserName, waName, sess, answered, fmt.Sprintf("%d", v.CountIn), fmt.Sprintf("%d", v.CountOut),
 		})
 	}
 	if txt == "" {
