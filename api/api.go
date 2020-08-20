@@ -71,6 +71,7 @@ type Stat struct {
 	Date       time.Time
 	TGUserName string
 	WAName     string
+	WAClient   string
 	Session    *time.Time
 	Answered   *float64
 	CountIn    int
