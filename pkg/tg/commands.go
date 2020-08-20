@@ -14,7 +14,6 @@ import (
 	"tgwabr/api"
 	"tgwabr/context"
 	"tgwabr/pkg"
-	"tgwabr/pkg/wa"
 	"time"
 
 	tgBotApi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -295,8 +294,9 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 			answered = fmt.Sprintf("%d", int(*v.Answered))
 		}
 		waName := v.WAName
-		if waName == "" {
-			waName, _ = (&wa.Instance{}).PartsClientJID(v.WAClient)
+		if waName == "" && strings.Count(v.WAClient, "@") > 0 {
+			parts := strings.Split(v.WAClient, "@")
+			waName = parts[0]
 		}
 		records = append(records, []string{
 			v.Date.Format("2006-01-02"), v.TGUserName, v.WAName, sess, answered, fmt.Sprintf("%d", v.CountIn), fmt.Sprintf("%d", v.CountOut),
