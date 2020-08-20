@@ -71,7 +71,10 @@ type Stat struct {
 	Date       time.Time
 	TGUserName string
 	WAName     string
-	Count      int
+	Session    *time.Time
+	Answered   *float64
+	CountIn    int
+	CountOut   int
 }
 
 type StatDay struct {

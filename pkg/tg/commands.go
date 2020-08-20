@@ -279,14 +279,22 @@ func (s *Service) CommandStat(update tgBotApi.Update) {
 		txt = "Complete"
 	}
 	records := [][]string{
-		{"DateAt", "UserName", "WAName", "Count"},
+		{"DateAt", "UserName", "WAName", "Session", "Answered", "CountIn", "CountOut"},
 	}
 	for _, v := range items {
 		if v == nil {
 			continue
 		}
+		sess := "NONE"
+		if v.Session != nil {
+			sess = v.Session.Format("02.01.06-15:04")
+		}
+		answered := "0"
+		if v.Answered != nil {
+			answered = fmt.Sprintf("%d", int(*v.Answered))
+		}
 		records = append(records, []string{
-			v.Date.Format("2006-01-02"), v.TGUserName, v.WAName, fmt.Sprintf("%d", v.Count),
+			v.Date.Format("2006-01-02"), v.TGUserName, v.WAName, sess, answered, fmt.Sprintf("%d", v.CountIn), fmt.Sprintf("%d", v.CountOut),
 		})
 	}
 	if txt == "" {
