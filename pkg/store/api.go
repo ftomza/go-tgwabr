@@ -149,7 +149,15 @@ func (s *Store) GetMessagesNotChattedByClient(client string) (msg []*api.Message
 
 func (s *Store) GetStatOnPeriod(mgChatID int64, userName string, start, end time.Time) (res []*api.Stat, err error) {
 	res = []*api.Stat{}
-	q := s.db.Table("messages").Select("date(created_at) `date`, tg_user_name, wa_client, wa_name, min(created_at) `session`, min(case when answered > 0 then answered end)/60 `answered`, count(case when direction = 'wa2tg' then id end) `count_in`, count(case when direction = 'tg2wa' then id end) `count_out`").
+	q := s.db.Table("messages").Select(`
+       date(created_at)                                   "date",
+       tg_user_name,
+       wa_client,
+       wa_name,
+       min(case when session != '' then created_at end)   "session",
+       min(case when answered > 0 then answered end) / 60 "answered",
+       count(case when direction = 'wa2tg' then id end)   "count_in",
+       count(case when direction = 'tg2wa' then id end)   "count_out"`).
 		Where("mg_id = ? and created_at between ? and DATE_ADD(?, INTERVAL 1 DAY)", mgChatID, start, end)
 	if userName != "" {
 		q = q.Where("tg_user_name = ?", userName)
@@ -157,9 +165,9 @@ func (s *Store) GetStatOnPeriod(mgChatID int64, userName string, start, end time
 	q = q.Group("date(created_at), tg_user_name, session, wa_name, wa_client").
 		Order("date").
 		Order("tg_user_name").
-		Order("wa_client").
+		Order("min(case when session != '' then created_at end)").
 		Order("wa_name").
-		Order("session")
+		Order("wa_client")
 
 	err = q.Scan(&res).Error
 
