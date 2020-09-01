@@ -132,10 +132,12 @@ func (s *Instance) GetClientName(client string) string {
 	jid := s.PrepareClientJID(client)
 	v, ok := s.conn.Store.Contacts[jid]
 	if ok {
-		if v.Name == "" {
+		if v.Name != "" {
+			return v.Name
+		}
+		if v.Short != "" {
 			return v.Short
 		}
-		return v.Name
 	}
 
 	db, ok := appCtx.FromDB(s.ctx)

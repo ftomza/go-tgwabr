@@ -144,7 +144,7 @@ func (s *Service) UpdateStatMessage() {
 				continue
 			}
 
-			if strings.Contains(i.WAClient, "@c.us") || strings.Contains(i.WAClient, "@g.us") {
+			if strings.Contains(i.WAClient, "@c.us") {
 				continue
 			}
 			name := wac.GetClientName(i.WAClient)

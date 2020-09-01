@@ -264,6 +264,9 @@ func (s *Instance) HandleContactList(contacts []whatsapp.Contact) {
 			if tp == "g.us" {
 				continue
 			}
+			if v.Name == "" {
+				continue
+			}
 			err := db.SaveContact(&api.Contact{
 				Phone:     phone,
 				WAClient:  v.Jid,
