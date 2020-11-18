@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"tgwabr/api"
 	appCtx "tgwabr/context"
 
@@ -186,7 +187,19 @@ func (s *Service) HandleCommand(update tgbotapi.Update) {
 		s.CommandRestart(update)
 	case "autoreplay":
 		s.CommandAutoReplay(update)
+	case "somethingelse":
+		s.CommandSomethingElse(update)
 	default:
 		_, _ = s.BotSend(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Command '%s' not implement", update.Message.Command())))
+	}
+}
+
+func (s *Service) HandleCallbackQuery(update tgbotapi.Update) {
+	parts := strings.SplitN(update.CallbackQuery.Data, ".", 2)
+	switch parts[0] {
+	case "stat":
+		s.CallbackQueryStat(update.CallbackQuery, parts)
+	default:
+		_, _ = s.BotSend(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Callback data '%s' not implement", parts[0])))
 	}
 }

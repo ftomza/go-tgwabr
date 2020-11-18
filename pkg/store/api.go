@@ -221,8 +221,7 @@ func (s *Store) GetNotChatted(mgID int64, botName string) (res []*api.StatDay, e
 							and t0.at = messages.created_at
 							and t0.mg_id = messages.mg_id
 	order by
-		messages.created_at desc
-	limit 20;
+		messages.created_at asc;
 	`, botName, mgID).Scan(&res).Error
 	return
 }

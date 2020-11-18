@@ -105,6 +105,91 @@ func (s *Service) CommandSync(update tgBotApi.Update) {
 	}
 }
 
+func (s *Service) CommandSomethingElse(update tgBotApi.Update) {
+	chatID := update.Message.Chat.ID
+	userID := update.Message.From.ID
+
+	msg := tgBotApi.NewMessage(chatID, "")
+	defer func() {
+		if msg.Text != "" {
+			_, _ = s.BotSend(msg)
+		}
+	}()
+
+	if s.IsMainGroup(chatID) {
+		msg.Text = "Command not for main group"
+		return
+	}
+
+	db, ok := context.FromDB(s.ctx)
+	if !ok {
+		msg.Text = "Module Store not ready"
+		return
+	}
+	waSvc, ok := context.FromWA(s.ctx)
+	if !ok {
+		log.Println("Module WhatsApp not ready")
+		return
+	}
+
+	for _, mainGroup := range s.mainGroups {
+		if !s.IsMemberMainGroup(userID, mainGroup) {
+			continue
+		}
+
+		grp, err := db.GetMainGroupByTGID(mainGroup)
+		if err != nil {
+			log.Println("Error get MainGroup updateStatMessage: ", err)
+			return
+		}
+
+		if grp == nil {
+			log.Println("Error get MainGroup not found: ", mainGroup)
+			return
+		}
+
+		items, err := db.GetNotChatted(mainGroup, s.bot.Self.UserName)
+		if err != nil {
+			log.Println("Error get items updateStatMessage: ", err)
+			return
+		}
+		wac, ok := waSvc.GetInstance(mainGroup)
+		if !ok {
+			log.Println("Instance WhatsApp not ready")
+			continue
+		}
+		var buttons []tgBotApi.KeyboardButton
+		var rows [][]tgBotApi.KeyboardButton
+		for _, v := range items {
+			if v == nil {
+				continue
+			}
+
+			if strings.Contains(v.WAClient, "@c.us") {
+				continue
+			}
+			name := wac.GetShortClient(v.WAClient)
+
+			tgBotApi.NewKeyboardButtonRow()
+			if len(buttons) == 6 {
+				rows = append(rows, buttons)
+				buttons = []tgBotApi.KeyboardButton{}
+			}
+			buttons = append(buttons, tgBotApi.NewKeyboardButton(fmt.Sprintf("/join %s %s", name, grp.Name)))
+		}
+		if len(buttons) > 0 {
+			rows = append(rows, buttons)
+		}
+		if len(rows) != 0 {
+			msg.Text = "There are still unprocessed chats"
+			msg.ReplyMarkup = tgBotApi.NewReplyKeyboard(rows...)
+		} else {
+			msg.Text = "No more unprocessed chats :)"
+			msg.ReplyMarkup = tgBotApi.NewRemoveKeyboard(true)
+		}
+	}
+}
+
 func (s *Service) CommandRePined(update tgBotApi.Update) {
 	chatID := update.Message.Chat.ID
 
@@ -137,10 +222,11 @@ func (s *Service) CommandRePined(update tgBotApi.Update) {
 		return
 	}
 
-	grp.MessagePin = -1
-	_ = db.SaveMainGroup(grp)
+	if grp.MessagePin > 0 {
+		s.deletePin(grp, db)
+	}
 
-	s.UpdateStatMessage()
+	s.UpdateStatMessage(1)
 }
 
 func (s *Service) CommandCheckClient(update tgBotApi.Update) {
@@ -1007,7 +1093,8 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 	}
 
 	msg.Text = fmt.Sprintf("Join '%s(%s)' OK", name, client)
-	s.UpdateStatMessage()
+	msg.ReplyMarkup = tgBotApi.NewReplyKeyboard(tgBotApi.NewKeyboardButtonRow(tgBotApi.NewKeyboardButton("/leave")))
+	s.UpdateStatMessage(1)
 	err = wac.GetHistory(client, 5)
 	if err != nil {
 		log.Println("Error get History: ", err)
@@ -1078,6 +1165,8 @@ func (s *Service) CommandLeave(update tgBotApi.Update) {
 
 		_, _ = s.bot.DeleteChatPhoto(tgBotApi.DeleteChatPhotoConfig{ChatID: update.Message.Chat.ID})
 	}
+
+	s.CommandSomethingElse(update)
 }
 
 func getPhotoByte(path string) []byte {
@@ -1131,4 +1220,21 @@ func (s *Service) prepareClient(arg string) (client string) {
 	client = strings.ReplaceAll(client, "-", "")
 	client = strings.ReplaceAll(client, "+", "")
 	return
+}
+
+func (s *Service) deletePin(grp *api.MainGroup, db api.Store) {
+	_, err := s.bot.UnpinChatMessage(tgBotApi.UnpinChatMessageConfig{ChatID: grp.TGChatID})
+	if err == nil {
+		_, err = s.bot.DeleteMessage(tgBotApi.DeleteMessageConfig{
+			ChatID:    grp.TGChatID,
+			MessageID: grp.MessagePin,
+		})
+	}
+	if err == nil {
+		grp.MessagePin = -1
+		err = db.SaveMainGroup(grp)
+	}
+	if err != nil {
+		log.Printf("Error delete MSG %d on %d updateStatMessage: %s\n", grp.MessagePin, grp.TGChatID, err)
+	}
 }

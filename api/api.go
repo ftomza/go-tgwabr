@@ -140,7 +140,7 @@ type TG interface {
 	SendDocument(chatID int64, reader io.Reader, fileName string) (msg *TGMessage, err error)
 	SendLocation(chatID int64, lat, lon float64) (msg *TGMessage, err error)
 	DeleteMessage(chatID int64, messageID int) (err error)
-	UpdateStatMessage()
+	UpdateStatMessage(chunk int)
 	SendLog(text string)
 	GetMainGroups() []int64
 }

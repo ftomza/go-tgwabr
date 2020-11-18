@@ -50,6 +50,27 @@ func New(ctx context.Context) (service *Service, err error) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
+	err = service.bot.SetMyCommands([]tgbotapi.BotCommand{
+		{"check_client", "Check possibility to join WhatsApp client, e.g. /check_client +971 55 995 02 03"},
+		{"alias", "Set alias to WhatsApp client, e.g. /alias +971 55 995 02 03 Maxim"},
+		{"contact", "Add contact to bot, e.g. /contact +971 55 995 02 03 Maxim"},
+		{"join", "Join chat with WhatsApp client, e.g. /join +7(911) 113-59-00 minsk or /join Maxim dubai"},
+		{"history", "Show recent messages (by default 10 ones) from chat with WhatsApp client, e.g. /history or /history 20"},
+		{"leave", "Leave chat"},
+		{"status", "Show connection status of Telegram main group to WhatsApp account"},
+		{"login", "Login to definite WhatsApp account"},
+		{"set", "Set Telegram main group name, e.g. /set dubai"},
+		{"logout", "Logout WhatsApp account"},
+		{"sync", "Try sync address book and chats(only stat)"},
+		{"restart", "Restart bot"},
+		{"repined", "Restore statistics in a pin"},
+		{"somethingelse", "Add keyboard for fast call join chat"},
+		{"autoreply", "Set auto reply to incoming messages from not joined WhatsApp client, e.g. /autoreply all \"Autoreply text here\" or /autoreply +971 55 995 02 03 \"Autoreply text here\""},
+	})
+	if err != nil {
+		return
+	}
+
 	updates, err := service.bot.GetUpdatesChan(u)
 	if err != nil {
 		return
@@ -118,10 +139,10 @@ func (s *Service) BotSend(msg tgbotapi.Chattable) (response tgbotapi.Message, er
 	return
 }
 
-func (s *Service) IsAuthorized(update tgbotapi.Update) bool {
+func (s *Service) IsAuthorized(message *tgbotapi.Message) bool {
 
 	for _, v := range s.mainGroups {
-		if s.IsMemberMainGroup(update.Message.From.ID, v) {
+		if s.IsMemberMainGroup(message.From.ID, v) {
 			return true
 		}
 	}
@@ -160,16 +181,24 @@ func (s *Service) mainLoop(updates tgbotapi.UpdatesChannel) {
 
 	for update := range updates {
 
+		if update.CallbackQuery != nil {
+			if !s.IsAuthorized(update.CallbackQuery.Message) {
+				continue
+			}
+			go s.HandleCallbackQuery(update)
+			continue
+		}
+
 		if update.Message == nil { // ignore any non-Message updates
 			continue
 		}
 
-		if !s.IsAuthorized(update) {
+		if !s.IsAuthorized(update.Message) {
 			continue
 		}
 
 		if update.Message.IsCommand() {
-			s.HandleCommand(update)
+			go s.HandleCommand(update)
 			continue
 		}
 

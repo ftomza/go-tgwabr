@@ -12,6 +12,8 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
+const chunkSize = 20
+
 func (s *Service) SendQR(mgChatID int64, code string) (msg *api.TGMessage, err error) {
 
 	png, err := qrcode.Encode(code, qrcode.Medium, 256)
@@ -115,7 +117,7 @@ func (s *Service) GetMembers() (members []int, err error) {
 	return []int{}, nil
 }
 
-func (s *Service) UpdateStatMessage() {
+func (s *Service) UpdateStatMessage(chunk int) {
 
 	db, ok := appCtx.FromDB(s.ctx)
 	if !ok {
@@ -139,7 +141,13 @@ func (s *Service) UpdateStatMessage() {
 			continue
 		}
 		txt := ""
-		for _, i := range items {
+		for k, i := range items {
+			if k < (chunk-1)*chunkSize {
+				continue
+			}
+			if k > chunk*chunkSize {
+				break
+			}
 			if i == nil {
 				continue
 			}
@@ -157,6 +165,14 @@ func (s *Service) UpdateStatMessage() {
 			}
 			txt = fmt.Sprintf("%s\n - %s(%s) from [%s]>%s: %d, ur: %d", txt, name, client, userName, i.Date.Format("2006-01-02"), i.Count, i.CountUnread)
 		}
+		var row []tgbotapi.InlineKeyboardButton
+		if chunk > 1 {
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData("⬅", fmt.Sprintf("stat.get#%d", chunk-1)))
+		}
+		row = append(row, tgbotapi.NewInlineKeyboardButtonData("🔄", "stat.refresh"))
+		if len(items) > chunk*chunkSize {
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData("➡", fmt.Sprintf("stat.get#%d", chunk+1)))
+		}
 
 		grp, err := db.GetMainGroupByTGID(v)
 		if err != nil {
@@ -169,30 +185,21 @@ func (s *Service) UpdateStatMessage() {
 			return
 		}
 
+		inlineKeyBoard := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(row...))
+
 		if grp.MessagePin > 0 && txt != "" {
 			msg := tgbotapi.NewEditMessageText(v, grp.MessagePin, txt+"\n #pinstat")
+			msg.ReplyMarkup = &inlineKeyBoard
 			_, err = s.BotSend(msg)
 			if err != nil && strings.Contains(err.Error(), "Bad Request: message to edit not found") {
 				grp.MessagePin = -1
 			}
 		} else if grp.MessagePin > 0 && txt == "" {
-			_, err = s.bot.UnpinChatMessage(tgbotapi.UnpinChatMessageConfig{ChatID: v})
-			if err == nil {
-				_, err = s.bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
-					ChatID:    v,
-					MessageID: grp.MessagePin,
-				})
-			}
-			if err == nil {
-				grp.MessagePin = -1
-				err = db.SaveMainGroup(grp)
-			}
-			if err != nil {
-				log.Printf("Error delete MSG %d on %d updateStatMessage: %s\n", grp.MessagePin, v, err)
-			}
+			s.deletePin(grp, db)
 		}
 		if grp.MessagePin < 1 && txt != "" {
 			msg := tgbotapi.NewMessage(v, txt+"\n #pinstat")
+			msg.ReplyMarkup = &inlineKeyBoard
 			resp, err := s.BotSend(msg)
 			if err == nil {
 				grp.MessagePin = resp.MessageID

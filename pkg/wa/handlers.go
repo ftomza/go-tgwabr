@@ -193,7 +193,7 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 		if err != nil {
 			log.Println("Save store error: ", err)
 		}
-		tg.UpdateStatMessage()
+		tg.UpdateStatMessage(1)
 	}
 }
 
