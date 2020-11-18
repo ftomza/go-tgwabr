@@ -7,6 +7,7 @@ import (
 	"strings"
 	"tgwabr/api"
 	appCtx "tgwabr/context"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/skip2/go-qrcode"
@@ -167,11 +168,11 @@ func (s *Service) UpdateStatMessage(chunk int) {
 		}
 		var row []tgbotapi.InlineKeyboardButton
 		if chunk > 1 {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData("⬅", fmt.Sprintf("stat.get#%d", chunk-1)))
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData("⬅ Prev", fmt.Sprintf("stat.get#%d", chunk-1)))
 		}
-		row = append(row, tgbotapi.NewInlineKeyboardButtonData("🔄", "stat.refresh"))
+		row = append(row, tgbotapi.NewInlineKeyboardButtonData("refresh 🔄 "+time.Now().Format("Mon 15:04"), "stat.refresh"))
 		if len(items) > chunk*chunkSize {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData("➡", fmt.Sprintf("stat.get#%d", chunk+1)))
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData("Next ➡ ", fmt.Sprintf("stat.get#%d", chunk+1)))
 		}
 
 		grp, err := db.GetMainGroupByTGID(v)
