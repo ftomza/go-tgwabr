@@ -131,7 +131,7 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update) {
 		log.Println("Module WhatsApp not ready")
 		return
 	}
-
+	var rows [][]tgBotApi.KeyboardButton
 	for _, mainGroup := range s.mainGroups {
 		if !s.IsMemberMainGroup(userID, mainGroup) {
 			continue
@@ -159,7 +159,6 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update) {
 			continue
 		}
 		var buttons []tgBotApi.KeyboardButton
-		var rows [][]tgBotApi.KeyboardButton
 		for _, v := range items {
 			if v == nil {
 				continue
@@ -180,13 +179,13 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update) {
 		if len(buttons) > 0 {
 			rows = append(rows, buttons)
 		}
-		if len(rows) != 0 {
-			msg.Text = "There are still unprocessed chats"
-			msg.ReplyMarkup = tgBotApi.NewReplyKeyboard(rows...)
-		} else {
-			msg.Text = "No more unprocessed chats :)"
-			msg.ReplyMarkup = tgBotApi.NewRemoveKeyboard(true)
-		}
+	}
+	if len(rows) != 0 {
+		msg.Text = "There are still unprocessed chats"
+		msg.ReplyMarkup = tgBotApi.NewReplyKeyboard(rows...)
+	} else {
+		msg.Text = "No more unprocessed chats :)"
+		msg.ReplyMarkup = tgBotApi.NewRemoveKeyboard(true)
 	}
 }
 
