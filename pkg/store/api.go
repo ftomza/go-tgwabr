@@ -253,6 +253,16 @@ func (s *Store) GetAliasesByName(name string) (apiItems []*api.Alias, err error)
 	return items.ToAPIAliases(), nil
 }
 
+func (s *Store) GetAliasesByWAClient(waClient string) (apiItems []*api.Alias, err error) {
+
+	items := Aliases{}
+	err = s.db.Model(&Alias{}).Find(&items, &Alias{WAClient: waClient}).Error
+	if err != nil {
+		return
+	}
+	return items.ToAPIAliases(), nil
+}
+
 func (s *Store) SaveContact(contact *api.Contact) (err error) {
 
 	item := &Contact{}

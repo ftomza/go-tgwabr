@@ -162,6 +162,7 @@ type Store interface {
 	GetNotChatted(mgID int64, botName string) (apiItems []*StatDay, err error)
 	SaveAlias(alias *Alias) (err error)
 	GetAliasesByName(name string) (apiItems []*Alias, err error)
+	GetAliasesByWAClient(waClient string) (apiItems []*Alias, err error)
 	SaveContact(contact *Contact) (err error)
 	GetContactsByPhone(phone string) (apiItems []*Contact, err error)
 	GetContactsByWAClient(waClient string) (apiItems []*Contact, err error)

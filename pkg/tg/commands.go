@@ -105,13 +105,35 @@ func (s *Service) CommandSync(update tgBotApi.Update) {
 	}
 }
 
-func (s *Service) CommandSomethingElse(update tgBotApi.Update) {
+func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) {
+
+	var (
+		meJoinButtons []tgBotApi.KeyboardButton
+		joinButtons   []tgBotApi.KeyboardButton
+		mgButtons     []tgBotApi.InlineKeyboardButton
+		usersButtons  []tgBotApi.InlineKeyboardButton
+	)
+
 	chatID := update.Message.Chat.ID
 	userID := update.Message.From.ID
+	msgID := update.Message.MessageID
+	userName := update.Message.From.UserName
+	userNameMessage := update.Message.From.UserName
+	mainGroupFilter := "all"
+	if mg != "" {
+		mainGroupFilter = mg
+	}
+	if user != "" {
+		userName = user
+	}
 
 	msg := tgBotApi.NewMessage(chatID, "")
 	defer func() {
 		if msg.Text != "" {
+			if mg != "" || user != "" {
+				_, _ = s.BotSend(tgBotApi.NewEditMessageTextAndMarkup(chatID, msgID, msg.Text, msg.ReplyMarkup.(tgBotApi.InlineKeyboardMarkup)))
+				return
+			}
 			_, _ = s.BotSend(msg)
 		}
 	}()
@@ -131,9 +153,25 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update) {
 		log.Println("Module WhatsApp not ready")
 		return
 	}
-	var rows [][]tgBotApi.KeyboardButton
+
+	commandArgs := strings.ToLower(strings.TrimSpace(update.Message.CommandArguments()))
+	arg1, arg2 := s.prepareArgs(commandArgs)
+
+	if arg1 != "" {
+		userName = arg1
+	}
+	if arg2 != "" {
+		mainGroupFilter = arg2
+	}
+
 	for _, mainGroup := range s.mainGroups {
 		if !s.IsMemberMainGroup(userID, mainGroup) {
+			continue
+		}
+
+		wac, ok := waSvc.GetInstance(mainGroup)
+		if !ok {
+			log.Println("Instance WhatsApp not ready")
 			continue
 		}
 
@@ -147,18 +185,16 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update) {
 			log.Println("Error get MainGroup not found: ", mainGroup)
 			return
 		}
+		mgButtons = append(mgButtons, tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("🌏 %s", grp.Name), fmt.Sprintf("somethingelse.get#%s#%s", userName, grp.Name)))
 
 		items, err := db.GetNotChatted(mainGroup, s.bot.Self.UserName)
 		if err != nil {
 			log.Println("Error get items updateStatMessage: ", err)
 			return
 		}
-		wac, ok := waSvc.GetInstance(mainGroup)
-		if !ok {
-			log.Println("Instance WhatsApp not ready")
-			continue
-		}
-		var buttons []tgBotApi.KeyboardButton
+
+		users := map[string]bool{}
+
 		for _, v := range items {
 			if v == nil {
 				continue
@@ -167,25 +203,81 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update) {
 			if strings.Contains(v.WAClient, "@c.us") {
 				continue
 			}
-			name := wac.GetShortClient(v.WAClient)
 
-			tgBotApi.NewKeyboardButtonRow()
-			if len(buttons) == 6 {
-				rows = append(rows, buttons)
-				buttons = []tgBotApi.KeyboardButton{}
+			tgUserName := v.TGUserName
+			if tgUserName == "" {
+				tgUserName = "New"
 			}
-			buttons = append(buttons, tgBotApi.NewKeyboardButton(fmt.Sprintf("/join %s %s", name, grp.Name)))
-		}
-		if len(buttons) > 0 {
-			rows = append(rows, buttons)
+
+			if ok := users[v.TGUserName]; !ok && v.TGUserName != "" && v.TGUserName != userNameMessage {
+				users[v.TGUserName] = true
+				usersButtons = append(usersButtons, tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 %s", v.TGUserName), fmt.Sprintf("somethingelse.get#%s#%s", v.TGUserName, mainGroupFilter)))
+			}
+
+			if userName == "me" && v.TGUserName != userNameMessage {
+				continue
+			}
+
+			if userName == "new" && v.TGUserName != "" {
+				continue
+			}
+
+			if userName != "all" && userName != "me" && userName != "new" && v.TGUserName != userName {
+				continue
+			}
+
+			if mainGroupFilter != "all" && grp.Name != mainGroupFilter {
+				continue
+			}
+
+			client := wac.GetShortClient(v.WAClient)
+			aliases, _ := db.GetAliasesByWAClient(client)
+			if len(aliases) > 0 {
+				client = aliases[0].Name
+			}
+			if v.TGUserName == userNameMessage {
+				meJoinButtons = append(meJoinButtons, tgBotApi.NewKeyboardButton(fmt.Sprintf("/join %s %s", client, grp.Name)))
+			} else {
+				joinButtons = append(joinButtons, tgBotApi.NewKeyboardButton(fmt.Sprintf("/join %s %s", client, grp.Name)))
+			}
 		}
 	}
-	if len(rows) != 0 {
-		msg.Text = "There are still unprocessed chats"
-		msg.ReplyMarkup = tgBotApi.NewReplyKeyboard(rows...)
+
+	var rows [][]tgBotApi.InlineKeyboardButton
+	var rowsKB [][]tgBotApi.KeyboardButton
+
+	rows = append(rows, tgBotApi.NewInlineKeyboardRow(
+		tgBotApi.NewInlineKeyboardButtonData("👤 Me", fmt.Sprintf("somethingelse.get#me#%s", mainGroupFilter)),
+		tgBotApi.NewInlineKeyboardButtonData("👤 All", fmt.Sprintf("somethingelse.get#all#%s", mainGroupFilter)),
+		tgBotApi.NewInlineKeyboardButtonData("👤 New", fmt.Sprintf("somethingelse.get#new#%s", mainGroupFilter)),
+		tgBotApi.NewInlineKeyboardButtonData("🌏 All", fmt.Sprintf("somethingelse.get#%s#all", userName)),
+	))
+
+	rows = append(rows, s.chunkedInlineButtons(usersButtons, 6)...)
+	rows = append(rows, s.chunkedInlineButtons(mgButtons, 6)...)
+	rowsKB = append(rowsKB, s.chunkedButtons(meJoinButtons, 6)...)
+	rowsKB = append(rowsKB, s.chunkedButtons(joinButtons, 6)...)
+
+	msg.Text = fmt.Sprintf(`
+Join chat helper
+- 🌏 Main group: %s,
+- 👤 User: %s,
+- Filtered unprocessed chats for me: %d,
+- Filtered unprocessed chats for any: %d`,
+		mainGroupFilter,
+		userName,
+		len(meJoinButtons),
+		len(joinButtons),
+	)
+	msg.ReplyMarkup = tgBotApi.NewInlineKeyboardMarkup(rows...)
+	if len(meJoinButtons) != 0 || len(joinButtons) != 0 {
+		msgBot := tgBotApi.NewMessage(chatID, "There are still unprocessed chats, choose 'join'")
+		msgBot.ReplyMarkup = tgBotApi.NewReplyKeyboard(rowsKB...)
+		_, _ = s.BotSend(msgBot)
 	} else {
-		msg.Text = "No more unprocessed chats :)"
-		msg.ReplyMarkup = tgBotApi.NewRemoveKeyboard(true)
+		msgBot := tgBotApi.NewMessage(chatID, "No more unprocessed chats :)")
+		msgBot.ReplyMarkup = tgBotApi.NewRemoveKeyboard(true)
+		_, _ = s.BotSend(msgBot)
 	}
 }
 
@@ -1165,7 +1257,7 @@ func (s *Service) CommandLeave(update tgBotApi.Update) {
 		_, _ = s.bot.DeleteChatPhoto(tgBotApi.DeleteChatPhotoConfig{ChatID: update.Message.Chat.ID})
 	}
 
-	s.CommandSomethingElse(update)
+	s.CommandSomethingElse(update, "", "")
 }
 
 func getPhotoByte(path string) []byte {
@@ -1236,4 +1328,36 @@ func (s *Service) deletePin(grp *api.MainGroup, db api.Store) {
 	if err != nil {
 		log.Printf("Error delete MSG %d on %d updateStatMessage: %s\n", grp.MessagePin, grp.TGChatID, err)
 	}
+}
+
+func (s *Service) chunkedInlineButtons(btns []tgBotApi.InlineKeyboardButton, size int) (res [][]tgBotApi.InlineKeyboardButton) {
+
+	var row []tgBotApi.InlineKeyboardButton
+	for _, v := range btns {
+		if len(row) == size {
+			res = append(res, tgBotApi.NewInlineKeyboardRow(row...))
+			row = []tgBotApi.InlineKeyboardButton{}
+		}
+		row = append(row, v)
+	}
+	if len(row) > 0 {
+		res = append(res, tgBotApi.NewInlineKeyboardRow(row...))
+	}
+	return
+}
+
+func (s *Service) chunkedButtons(btns []tgBotApi.KeyboardButton, size int) (res [][]tgBotApi.KeyboardButton) {
+
+	var row []tgBotApi.KeyboardButton
+	for _, v := range btns {
+		if len(row) == size {
+			res = append(res, tgBotApi.NewKeyboardButtonRow(row...))
+			row = []tgBotApi.KeyboardButton{}
+		}
+		row = append(row, v)
+	}
+	if len(row) > 0 {
+		res = append(res, tgBotApi.NewKeyboardButtonRow(row...))
+	}
+	return
 }

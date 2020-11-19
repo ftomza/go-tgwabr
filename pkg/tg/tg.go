@@ -51,21 +51,21 @@ func New(ctx context.Context) (service *Service, err error) {
 	u.Timeout = 60
 
 	err = service.bot.SetMyCommands([]tgbotapi.BotCommand{
-		{"check_client", "Check possibility to join WhatsApp client, e.g. /check_client +971 55 995 02 03"},
-		{"alias", "Set alias to WhatsApp client, e.g. /alias +971 55 995 02 03 Maxim"},
-		{"contact", "Add contact to bot, e.g. /contact +971 55 995 02 03 Maxim"},
-		{"join", "Join chat with WhatsApp client, e.g. /join +7(911) 113-59-00 minsk or /join Maxim dubai"},
-		{"history", "Show recent messages (by default 10 ones) from chat with WhatsApp client, e.g. /history or /history 20"},
-		{"leave", "Leave chat"},
-		{"status", "Show connection status of Telegram main group to WhatsApp account"},
-		{"login", "Login to definite WhatsApp account"},
-		{"set", "Set Telegram main group name, e.g. /set dubai"},
-		{"logout", "Logout WhatsApp account"},
-		{"sync", "Try sync address book and chats(only stat)"},
-		{"restart", "Restart bot"},
-		{"repined", "Restore statistics in a pin"},
-		{"somethingelse", "Add keyboard for fast call join chat"},
-		{"autoreply", "Set auto reply to incoming messages from not joined WhatsApp client, e.g. /autoreply all \"Autoreply text here\" or /autoreply +971 55 995 02 03 \"Autoreply text here\""},
+		{Command: "check_client", Description: "Check possibility to join WhatsApp client, e.g. /check_client +971 55 995 02 03"},
+		{Command: "alias", Description: "Set alias to WhatsApp client, e.g. /alias +971 55 995 02 03 Maxim"},
+		{Command: "contact", Description: "Add contact to bot, e.g. /contact +971 55 995 02 03 Maxim"},
+		{Command: "join", Description: "Join chat with WhatsApp client, e.g. /join +7(911) 113-59-00 minsk or /join Maxim dubai"},
+		{Command: "history", Description: "Show recent messages (by default 10 ones) from chat with WhatsApp client, e.g. /history or /history 20"},
+		{Command: "leave", Description: "Leave chat"},
+		{Command: "status", Description: "Show connection status of Telegram main group to WhatsApp account"},
+		{Command: "login", Description: "Login to definite WhatsApp account"},
+		{Command: "set", Description: "Set Telegram main group name, e.g. /set dubai"},
+		{Command: "logout", Description: "Logout WhatsApp account"},
+		{Command: "sync", Description: "Try sync address book and chats(only stat)"},
+		{Command: "restart", Description: "Restart bot"},
+		{Command: "repined", Description: "Restore statistics in a pin"},
+		{Command: "somethingelse", Description: "Add keyboard for fast call join chat, e.g. /somethingelse [me|all|new|<username>] [all|<main group name>]"},
+		{Command: "autoreply", Description: "Set auto reply to incoming messages from not joined WhatsApp client, e.g. /autoreply all \"Autoreply text here\" or /autoreply +971 55 995 02 03 \"Autoreply text here\""},
 	})
 	if err != nil {
 		return

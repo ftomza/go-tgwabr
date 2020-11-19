@@ -29,3 +29,16 @@ func (s *Service) CallbackQueryStat(query *tgbotapi.CallbackQuery, parts []strin
 		s.UpdateStatMessage(chunk)
 	}
 }
+
+func (s *Service) CallbackQuerySomethingElse(query *tgbotapi.CallbackQuery, parts []string) {
+	if len(parts) == 1 {
+		return
+	}
+	args := strings.Split(parts[1], "#")
+	if args[0] != "get" {
+		return
+	}
+	msg := query.Message
+	msg.From = query.From
+	s.CommandSomethingElse(tgbotapi.Update{Message: msg}, args[1], args[2])
+}

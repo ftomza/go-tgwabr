@@ -188,7 +188,7 @@ func (s *Service) HandleCommand(update tgbotapi.Update) {
 	case "autoreplay":
 		s.CommandAutoReplay(update)
 	case "somethingelse":
-		s.CommandSomethingElse(update)
+		s.CommandSomethingElse(update, "", "")
 	default:
 		_, _ = s.BotSend(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Command '%s' not implement", update.Message.Command())))
 	}
@@ -199,6 +199,8 @@ func (s *Service) HandleCallbackQuery(update tgbotapi.Update) {
 	switch parts[0] {
 	case "stat":
 		s.CallbackQueryStat(update.CallbackQuery, parts)
+	case "somethingelse":
+		s.CallbackQuerySomethingElse(update.CallbackQuery, parts)
 	default:
 		_, _ = s.BotSend(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Callback data '%s' not implement", parts[0])))
 	}
