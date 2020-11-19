@@ -108,8 +108,8 @@ func (s *Service) CommandSync(update tgBotApi.Update) {
 func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) {
 
 	var (
-		meJoinButtons []tgBotApi.KeyboardButton
-		joinButtons   []tgBotApi.KeyboardButton
+		meJoinButtons []tgBotApi.InlineKeyboardButton
+		joinButtons   []tgBotApi.InlineKeyboardButton
 		mgButtons     []tgBotApi.InlineKeyboardButton
 		usersButtons  []tgBotApi.InlineKeyboardButton
 	)
@@ -164,6 +164,9 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) 
 		mainGroupFilter = arg2
 	}
 
+	users := map[string]bool{}
+	stat := map[string]int{}
+
 	for _, mainGroup := range s.mainGroups {
 		if !s.IsMemberMainGroup(userID, mainGroup) {
 			continue
@@ -193,8 +196,6 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) 
 			return
 		}
 
-		users := map[string]bool{}
-
 		for _, v := range items {
 			if v == nil {
 				continue
@@ -206,8 +207,21 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) 
 
 			if ok := users[v.TGUserName]; !ok && v.TGUserName != "" && v.TGUserName != userNameMessage {
 				users[v.TGUserName] = true
-				usersButtons = append(usersButtons, tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 %s", v.TGUserName), fmt.Sprintf("somethingelse.get#%s#%s", v.TGUserName, mainGroupFilter)))
 			}
+
+			if v.TGUserName == userNameMessage {
+				stat["me"]++
+			}
+
+			if v.TGUserName != "" {
+				stat[v.TGUserName]++
+			}
+
+			if v.TGUserName == "" {
+				stat["new"]++
+			}
+
+			stat["all"]++
 
 			if userName == "me" && v.TGUserName != userNameMessage {
 				continue
@@ -225,55 +239,51 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) 
 				continue
 			}
 
-			client := wac.GetShortClient(v.WAClient)
-			aliases, _ := db.GetAliasesByWAClient(client)
-			if len(aliases) > 0 {
-				client = aliases[0].Name
+			tgUserName := v.TGUserName
+			if tgUserName == "" {
+				tgUserName = "New"
 			}
+
+			clientName := wac.GetClientName(v.WAClient)
+			client := wac.GetShortClient(v.WAClient)
 			if v.TGUserName == userNameMessage {
-				meJoinButtons = append(meJoinButtons, tgBotApi.NewKeyboardButton(fmt.Sprintf("/join %s %s", client, grp.Name)))
+				meJoinButtons = append(meJoinButtons, tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("%s(%s) on %s", clientName, client, grp.Name), fmt.Sprintf("chat.join#%s#%s", client, grp.Name)))
 			} else {
-				joinButtons = append(joinButtons, tgBotApi.NewKeyboardButton(fmt.Sprintf("/join %s %s", client, grp.Name)))
+				joinButtons = append(joinButtons, tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("%s: %s(%s) on %s", tgUserName, clientName, client, grp.Name), fmt.Sprintf("chat.join#%s#%s", client, grp.Name)))
 			}
 		}
 	}
 
 	var rows [][]tgBotApi.InlineKeyboardButton
-	var rowsKB [][]tgBotApi.KeyboardButton
 
-	rows = append(rows, s.chunkedInlineButtons(usersButtons, 6)...)
 	rows = append(rows, tgBotApi.NewInlineKeyboardRow(
-		tgBotApi.NewInlineKeyboardButtonData("👤 Me", fmt.Sprintf("somethingelse.get#me#%s", mainGroupFilter)),
-		tgBotApi.NewInlineKeyboardButtonData("👤 All", fmt.Sprintf("somethingelse.get#all#%s", mainGroupFilter)),
-		tgBotApi.NewInlineKeyboardButtonData("👤 New", fmt.Sprintf("somethingelse.get#new#%s", mainGroupFilter)),
-		tgBotApi.NewInlineKeyboardButtonData("🌏 All", fmt.Sprintf("somethingelse.get#%s#all", userName)),
+		tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 Me(%d)", stat["me"]), fmt.Sprintf("somethingelse.get#me#%s", mainGroupFilter)),
+		tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 All(%d)", stat["all"]), fmt.Sprintf("somethingelse.get#all#%s", mainGroupFilter)),
+		tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 New(%d)", stat["new"]), fmt.Sprintf("somethingelse.get#new#%s", mainGroupFilter)),
+		tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("🌏 All"), fmt.Sprintf("somethingelse.get#%s#all", userName)),
 	))
 
+	for k := range users {
+		usersButtons = append(usersButtons, tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 %s(%d)", k, stat[k]), fmt.Sprintf("somethingelse.get#%s#%s", k, mainGroupFilter)))
+	}
+	rows = append(rows, s.chunkedInlineButtons(usersButtons, 6)...)
 	rows = append(rows, s.chunkedInlineButtons(mgButtons, 6)...)
-	rowsKB = append(rowsKB, s.chunkedButtons(meJoinButtons, 6)...)
-	rowsKB = append(rowsKB, s.chunkedButtons(joinButtons, 6)...)
+	rows = append(rows, s.chunkedInlineButtons(meJoinButtons, 4)...)
+	rows = append(rows, s.chunkedInlineButtons(joinButtons, 4)...)
 
 	msg.Text = fmt.Sprintf(`
 Join chat helper
 - 🌏 Main group: %s,
 - 👤 User: %s,
 - Filtered unprocessed chats for me: %d,
-- Filtered unprocessed chats for any: %d`,
+- Filtered unprocessed chats for any: %d.
+__________________________________________________________________________________________________________________________________________________________________________________________________`,
 		mainGroupFilter,
 		userName,
 		len(meJoinButtons),
 		len(joinButtons),
 	)
 	msg.ReplyMarkup = tgBotApi.NewInlineKeyboardMarkup(rows...)
-	if len(meJoinButtons) != 0 || len(joinButtons) != 0 {
-		msgBot := tgBotApi.NewMessage(chatID, "There are still unprocessed chats, choose 'join'")
-		msgBot.ReplyMarkup = tgBotApi.NewReplyKeyboard(rowsKB...)
-		_, _ = s.BotSend(msgBot)
-	} else {
-		msgBot := tgBotApi.NewMessage(chatID, "No more unprocessed chats :)")
-		msgBot.ReplyMarkup = tgBotApi.NewRemoveKeyboard(true)
-		_, _ = s.BotSend(msgBot)
-	}
 }
 
 func (s *Service) CommandRePined(update tgBotApi.Update) {
@@ -972,7 +982,7 @@ func (s *Service) CommandLogout(update tgBotApi.Update) {
 	}
 }
 
-func (s *Service) CommandJoin(update tgBotApi.Update) {
+func (s *Service) CommandJoin(update tgBotApi.Update, clientIn, mgIn string) {
 
 	chatID := update.Message.Chat.ID
 	userName := update.Message.From.UserName
@@ -1006,6 +1016,12 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 	args = strings.ToLower(strings.TrimSpace(args))
 
 	client, mgName := s.prepareArgs(args)
+	if clientIn != "" {
+		client = clientIn
+	}
+	if mgIn != "" {
+		mgName = mgIn
+	}
 	client = s.prepareClient(client)
 
 	if client == "" {
@@ -1179,7 +1195,7 @@ func (s *Service) CommandJoin(update tgBotApi.Update) {
 	}
 
 	msg.Text = fmt.Sprintf("Join '%s(%s)' OK", name, client)
-	msg.ReplyMarkup = tgBotApi.NewReplyKeyboard(tgBotApi.NewKeyboardButtonRow(tgBotApi.NewKeyboardButton("/leave")))
+	msg.ReplyMarkup = tgBotApi.NewRemoveKeyboard(true)
 	s.UpdateStatMessage(1)
 	err = wac.GetHistory(client, 5)
 	if err != nil {

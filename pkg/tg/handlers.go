@@ -164,7 +164,7 @@ func (s *Service) HandleCommand(update tgbotapi.Update) {
 	case "logout":
 		s.CommandLogout(update)
 	case "join":
-		s.CommandJoin(update)
+		s.CommandJoin(update, "", "")
 	case "leave":
 		s.CommandLeave(update)
 	case "history":
@@ -201,6 +201,8 @@ func (s *Service) HandleCallbackQuery(update tgbotapi.Update) {
 		s.CallbackQueryStat(update.CallbackQuery, parts)
 	case "somethingelse":
 		s.CallbackQuerySomethingElse(update.CallbackQuery, parts)
+	case "chat":
+		s.CallbackQueryChat(update, parts)
 	default:
 		_, _ = s.BotSend(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Callback data '%s' not implement", parts[0])))
 	}

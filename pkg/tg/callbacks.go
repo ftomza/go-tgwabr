@@ -42,3 +42,17 @@ func (s *Service) CallbackQuerySomethingElse(query *tgbotapi.CallbackQuery, part
 	msg.From = query.From
 	s.CommandSomethingElse(tgbotapi.Update{Message: msg}, args[1], args[2])
 }
+
+func (s *Service) CallbackQueryChat(update tgbotapi.Update, parts []string) {
+	if len(parts) == 1 {
+		return
+	}
+	args := strings.Split(parts[1], "#")
+	if args[0] != "join" {
+		return
+	}
+	msg := update.CallbackQuery.Message
+	msg.From = update.CallbackQuery.From
+	_, _ = s.bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "Join "+args[1]))
+	s.CommandJoin(tgbotapi.Update{Message: msg}, args[1], args[2])
+}
