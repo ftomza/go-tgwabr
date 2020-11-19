@@ -204,11 +204,6 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) 
 				continue
 			}
 
-			tgUserName := v.TGUserName
-			if tgUserName == "" {
-				tgUserName = "New"
-			}
-
 			if ok := users[v.TGUserName]; !ok && v.TGUserName != "" && v.TGUserName != userNameMessage {
 				users[v.TGUserName] = true
 				usersButtons = append(usersButtons, tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 %s", v.TGUserName), fmt.Sprintf("somethingelse.get#%s#%s", v.TGUserName, mainGroupFilter)))
@@ -246,6 +241,7 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) 
 	var rows [][]tgBotApi.InlineKeyboardButton
 	var rowsKB [][]tgBotApi.KeyboardButton
 
+	rows = append(rows, s.chunkedInlineButtons(usersButtons, 6)...)
 	rows = append(rows, tgBotApi.NewInlineKeyboardRow(
 		tgBotApi.NewInlineKeyboardButtonData("👤 Me", fmt.Sprintf("somethingelse.get#me#%s", mainGroupFilter)),
 		tgBotApi.NewInlineKeyboardButtonData("👤 All", fmt.Sprintf("somethingelse.get#all#%s", mainGroupFilter)),
@@ -253,7 +249,6 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) 
 		tgBotApi.NewInlineKeyboardButtonData("🌏 All", fmt.Sprintf("somethingelse.get#%s#all", userName)),
 	))
 
-	rows = append(rows, s.chunkedInlineButtons(usersButtons, 6)...)
 	rows = append(rows, s.chunkedInlineButtons(mgButtons, 6)...)
 	rowsKB = append(rowsKB, s.chunkedButtons(meJoinButtons, 6)...)
 	rowsKB = append(rowsKB, s.chunkedButtons(joinButtons, 6)...)
