@@ -132,10 +132,8 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 		var raw []byte
 		raw, err = m.Download()
 		if err != nil {
-			if err != whatsapp.ErrMediaDownloadFailedWith410 && err != whatsapp.ErrMediaDownloadFailedWith404 {
-				if _, err = s.conn.LoadMediaInfo(m.Info.RemoteJid, m.Info.Id, strconv.FormatBool(m.Info.FromMe)); err == nil {
-					raw, err = m.Download()
-				}
+			if _, err = s.conn.LoadMediaInfo(m.Info.RemoteJid, m.Info.Id, strconv.FormatBool(m.Info.FromMe)); err == nil {
+				raw, err = m.Download()
 			}
 		}
 		if err == nil {
