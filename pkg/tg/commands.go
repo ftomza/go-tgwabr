@@ -277,7 +277,7 @@ Join chat helper
 - 👤 User: %s,
 - Filtered unprocessed chats for me: %d,
 - Filtered unprocessed chats for any: %d.
-__________________________________________________________________________________________________________________________________________________________________________________________________`,
+_______________________________________________________________________________________________________________________________________________________________________________________________________________________________________`,
 		mainGroupFilter,
 		userName,
 		len(meJoinButtons),
@@ -1353,22 +1353,6 @@ func (s *Service) chunkedInlineButtons(btns []tgBotApi.InlineKeyboardButton, siz
 	}
 	if len(row) > 0 {
 		res = append(res, tgBotApi.NewInlineKeyboardRow(row...))
-	}
-	return
-}
-
-func (s *Service) chunkedButtons(btns []tgBotApi.KeyboardButton, size int) (res [][]tgBotApi.KeyboardButton) {
-
-	var row []tgBotApi.KeyboardButton
-	for _, v := range btns {
-		if len(row) == size {
-			res = append(res, tgBotApi.NewKeyboardButtonRow(row...))
-			row = []tgBotApi.KeyboardButton{}
-		}
-		row = append(row, v)
-	}
-	if len(row) > 0 {
-		res = append(res, tgBotApi.NewKeyboardButtonRow(row...))
 	}
 	return
 }
