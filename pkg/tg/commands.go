@@ -91,9 +91,9 @@ func (s *Service) CommandSync(update tgBotApi.Update) {
 	if ok, err := wac.SyncContacts(); err != nil {
 		msg.Text = fmt.Sprintf("Sync contact ERROR: %s", err.Error())
 	} else if ok {
-		msg.Text = fmt.Sprintf("Sync contact OK")
+		msg.Text = "Sync contact OK"
 	} else {
-		msg.Text = fmt.Sprintf("Sync contact BAD")
+		msg.Text = "Sync contact BAD"
 	}
 
 	if ok, err := wac.SyncChats(); err != nil {
@@ -260,7 +260,7 @@ func (s *Service) CommandSomethingElse(update tgBotApi.Update, user, mg string) 
 		tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 Me(%d)", stat["me"]), fmt.Sprintf("somethingelse.get#me#%s", mainGroupFilter)),
 		tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 All(%d)", stat["all"]), fmt.Sprintf("somethingelse.get#all#%s", mainGroupFilter)),
 		tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("👤 New(%d)", stat["new"]), fmt.Sprintf("somethingelse.get#new#%s", mainGroupFilter)),
-		tgBotApi.NewInlineKeyboardButtonData(fmt.Sprintf("🌏 All"), fmt.Sprintf("somethingelse.get#%s#all", userName)),
+		tgBotApi.NewInlineKeyboardButtonData("🌏 All", fmt.Sprintf("somethingelse.get#%s#all", userName)),
 	))
 
 	for k := range users {
