@@ -3,11 +3,17 @@ module tgwabr
 go 1.14
 
 require (
-	github.com/Arman92/go-tdlib v0.0.0-20200306211512-7c3765667115
-	github.com/Rhymen/go-whatsapp v0.1.2-0.20210615184944-2b8a3e9b8aa2
-	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
+	github.com/Rhymen/go-whatsapp v0.1.2-0.20211102134409-31a2e740845c
+	github.com/bluele/gcache v0.0.2
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/go-telegram-bot-api/telegram-bot-api v1.0.1-0.20201107014523-54104a08f947
-	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
-	github.com/jinzhu/gorm v1.9.12
-	github.com/skip2/go-qrcode v0.0.0-20191027152451-9434209cb086
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/jinzhu/copier v0.3.2
+	github.com/jinzhu/gorm v1.9.16
+	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
 )
