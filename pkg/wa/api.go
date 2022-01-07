@@ -492,6 +492,8 @@ func (s *Instance) PrepareClientJID(client string) string {
 	jidPrefix := "s.whatsapp.net"
 	if len(strings.SplitN(client, "-", 2)) == 2 {
 		jidPrefix = "g.us"
+	} else if len(client) > 14 {
+		jidPrefix = "g.us"
 	}
 	return fmt.Sprintf("%s@%s", client, jidPrefix)
 }
