@@ -66,7 +66,7 @@ func New(ctx context.Context) (service *Service, err error) {
 			return service, fmt.Errorf("error creating connection: %w", err)
 		}
 
-		instance.conn.SetClientVersion(2, 3147, 10)
+		instance.conn.SetClientVersion(2, 2208, 12)
 
 		instance.conn.AddHandler(instance)
 		if err = instance.login(true); err != nil {
