@@ -13,7 +13,7 @@ import (
 	appCtx "tgwabr/context"
 	"time"
 
-	"github.com/Rhymen/go-whatsapp"
+	"github.com/cristalinojr/go-whatsapp"
 )
 
 type Service struct {
@@ -133,7 +133,7 @@ func (s *Instance) login(onlyRestore bool) error {
 		return fmt.Errorf("error bad status login ")
 	}
 
-	ok, err = s.conn.AdminTest()
+	err = s.conn.AdminTest()
 	if err != nil {
 		if !onlyRestore {
 			return fmt.Errorf("error ping: %w", err)

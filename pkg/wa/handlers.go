@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"tgwabr/api"
 	appCtx "tgwabr/context"
 	"tgwabr/pkg"
 	"time"
 
-	"github.com/Rhymen/go-whatsapp"
+	"github.com/cristalinojr/go-whatsapp"
 )
 
 func (s *Instance) handleMessage(message interface{}, doSave bool) {
@@ -132,7 +131,7 @@ func (s *Instance) handleMessage(message interface{}, doSave bool) {
 		var raw []byte
 		raw, err = m.Download()
 		if err != nil {
-			if _, err = s.conn.LoadMediaInfo(m.Info.RemoteJid, m.Info.Id, strconv.FormatBool(m.Info.FromMe)); err == nil {
+			if _, err = s.conn.LoadMediaInfo(m.Info.RemoteJid, m.Info.Id, m.Info.FromMe); err == nil {
 				raw, err = m.Download()
 			}
 		}

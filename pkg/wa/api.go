@@ -11,10 +11,9 @@ import (
 	"tgwabr/pkg"
 	"time"
 
-	"github.com/Rhymen/go-whatsapp/binary"
-
-	"github.com/Rhymen/go-whatsapp"
-	waproto "github.com/Rhymen/go-whatsapp/binary/proto"
+	"github.com/cristalinojr/go-whatsapp"
+	"github.com/cristalinojr/go-whatsapp/binary"
+	waproto "go.mau.fi/whatsmeow/binary/proto"
 )
 
 func (s *Instance) ReadMessage(client, messageID string) (err error) {
@@ -30,9 +29,9 @@ func (s *Instance) ReadMessage(client, messageID string) (err error) {
 }
 
 func (s *Instance) GetStatusLogin() bool {
-	pong, err := s.conn.AdminTest()
+	err := s.conn.AdminTest()
 
-	if !pong || err != nil {
+	if err != nil {
 		log.Println("WAInstance error pinging: ", err)
 		return false
 	}
