@@ -3,6 +3,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBKeU+7zCJoLcc=
 github.com/Rhymen/go-whatsapp v0.1.2-0.20211102134409-31a2e740845c h1:4mIZQXKYBymQ9coA82nNyG/CjicMNLBZ8cPVrhNUM3g=
 github.com/Rhymen/go-whatsapp v0.1.2-0.20211102134409-31a2e740845c/go.mod h1:DNSFRLFDFIqm2+0aJzSOVfn25020vldM4SRqz6YtLgI=
+github.com/Rhymen/go-whatsapp v0.1.2-0.20220119124930-0f2ecc23a556 h1:sxjKEDsTd37PrvWZoMXRIaWAC016iIJSP7V+u1SLGvg=
+github.com/Rhymen/go-whatsapp v0.1.2-0.20220119124930-0f2ecc23a556/go.mod h1:DNSFRLFDFIqm2+0aJzSOVfn25020vldM4SRqz6YtLgI=
 github.com/andybalholm/cascadia v1.1.0/go.mod h1:GsXiBklL0woXo1j/WYWtSYYC4ouU9PqHO0sqidkEA4Y=
 github.com/bluele/gcache v0.0.2 h1:WcbfdXICg7G/DGBh1PFfcirkWOQV+v077yF1pSy3DGw=
 github.com/bluele/gcache v0.0.2/go.mod h1:m15KV+ECjptwSPxKhOhQoAFQVtUFjTVkc3H8o0t/fp0=

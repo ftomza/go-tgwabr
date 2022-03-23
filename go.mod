@@ -3,7 +3,7 @@ module tgwabr
 go 1.14
 
 require (
-	github.com/Rhymen/go-whatsapp v0.1.2-0.20211102134409-31a2e740845c
+	github.com/Rhymen/go-whatsapp v0.1.2-0.20220119124930-0f2ecc23a556
 	github.com/bluele/gcache v0.0.2
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/go-telegram-bot-api/telegram-bot-api v1.0.1-0.20201107014523-54104a08f947
