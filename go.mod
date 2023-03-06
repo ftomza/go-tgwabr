@@ -19,6 +19,6 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
-	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
